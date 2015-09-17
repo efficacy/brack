@@ -1,3 +1,4 @@
+var util = require('util');
 
 function category(c) {
   if (c == '(') return 'open';
@@ -55,13 +56,13 @@ function lex(s, parser) {
   }
 }
 
-function execute(tree) {
-  console.log('execute tree=' + tree);
-}
-
 function evaluate(s) {
   console.log('evaluate s=' + s);
   return s;
+}
+
+function execute(tree) {
+  console.log('execute tree=' + util.inspect(tree));
 }
 
 var parse_stack = [];
@@ -88,7 +89,7 @@ function parser(token) {
     }
     break;
   }
-  console.log('parsed ' + token.type + ' tree: ' + parse_tree);
+  console.log('parsed ' + token.type + ' tree: ' + util.inspect(parse_tree));
 }
 
 process.stdin.setEncoding('utf8');
