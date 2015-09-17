@@ -15,7 +15,6 @@ var lex_status = 'outside';
 function lex(s, parser) {
   function emit(type) {
     lex_status = 'outside';
-
     var value = '' + lex_buf;
     lex_buf = '';
     parser({type: type, value: value});
@@ -27,7 +26,7 @@ function lex(s, parser) {
 //    console.log('status=' + lex_status + ' c=' + c + ' category=' + cc + ' buf=[' + lex_buf + ']');
     switch(cc) {
     case 'ws':
-      if (lex_status != 'outside') lex_buf += c;
+      if (lex_status == 'sq' || lex_status == 'dq') lex_buf += c;
       if (lex_status == 'symbol') emit('symbol');
       break;
     case 'letter':
