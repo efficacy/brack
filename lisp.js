@@ -10,15 +10,11 @@ function category(c) {
 
 var lex_buf = '';
 var lex_status = 'outside';
-var context = [];
-
-function parser(token) {
-  console.log('got token type: ' + token.type + ' value: ' + token.value);
-}
 
 function lex(s, parser) {
   function emit(type) {
     lex_status = 'outside';
+
     var value = '' + lex_buf;
     lex_buf = '';
     parser({type: type, value: value});
@@ -27,7 +23,7 @@ function lex(s, parser) {
   for (var i = 0; i < n; ++i) {
     c = s[i];
     var cc = category(c);
-    console.log('status=' + lex_status + ' c=' + c + ' category=' + cc + ' buf=[' + lex_buf + ']');
+//    console.log('status=' + lex_status + ' c=' + c + ' category=' + cc + ' buf=[' + lex_buf + ']');
     switch(cc) {
     case 'ws':
       if (lex_status != 'outside') lex_buf += c;
@@ -57,6 +53,42 @@ function lex(s, parser) {
       break;
     }
   }
+}
+
+function execute(tree) {
+  console.log('execute tree=' + tree);
+}
+
+function evaluate(s) {
+  console.log('evaluate s=' + s);
+  return s;
+}
+
+var parse_stack = [];
+var parse_tree = null;
+
+function parser(token) {
+  console.log('got token type: ' + token.type + ' value: ' + token.value);
+  switch(token.type) {
+  case 'open':
+    parse_stack.push(parse_tree);
+    parse_tree = [];
+    break;
+  case 'symbol':
+    var value = evaluate(token.value);
+    parse_tree.push(value);
+    break;
+  case 'close':
+    var value = parse_tree;
+    parse_tree = parse_stack.pop();
+    if (null == parse_tree) {
+      execute(value);
+    } else {
+      parse_tree.push(value);
+    }
+    break;
+  }
+  console.log('parsed ' + token.type + ' tree: ' + parse_tree);
 }
 
 process.stdin.setEncoding('utf8');
