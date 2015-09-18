@@ -56,7 +56,7 @@ function lex(s, parser) {
 }
 
 var symbols = {
-  echo: function(tree) { console.log('echo tree=' + util.inspect(tree)); return ""; }
+  echo: function(tree) { process.stdout.write(util.inspect(tree) + '\n'); return ""; }
 };
 
 function evaluate(s) {
@@ -88,7 +88,7 @@ function parser(token) {
     var value = execute(parse_tree);
     parse_tree = parse_stack.pop();
     if (null == parse_tree) {
-      console.log(value);
+      process.stdout.write(value.toString() + '\n');
     } else {
       parse_tree.push(value);
     }
@@ -107,5 +107,5 @@ process.stdin.on('readable', function() {
 });
 
 process.stdin.on('end', function() {
-  process.stdout.write('end');
+  lex(' ', parser);
 });
