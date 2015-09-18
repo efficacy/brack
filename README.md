@@ -104,7 +104,7 @@ requires functions. Luckily, some are supplied. More may come later ;)
   ```
 
 * **plus**:
-  "add" its first two parameters (numericallor textually, depending on the supplied values)
+  "add" its first two parameters (numerically or textually, depending on the supplied values)
 
   ```
   (plus 1 2) =>
