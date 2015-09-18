@@ -2,11 +2,21 @@ var util = require('util');
 
 function tail(list, n) { return list.slice(n||1); }
 
-var symbols = {
-  def: function(list) { symbols[list[1]] = list[2]; },
+var builtin = {
+  parent: null,
 
+  def: function(list) { user[list[1]] = list[2]; },
   echo: function(list) { process.stdout.write(util.inspect(tail(list)) + '\n'); }
 };
+var user = { parent: builtin };
+var symbols = [ builtin, user ];
+
+function lookup(name) {
+  for(var dict = symbols[symbols.length-1]; dict; dict = dict.parent) {
+    if (dict[name]) return dict[name];
+  }
+  return null;
+}
 
 function category(c) {
   if (c === '(') return 'open';
@@ -67,7 +77,7 @@ function lex(s, parser) {
 function evaluate(s) {
   if ((s[0] >= '0' && s[0] <= '9') || s[0] === '-') return Number(s);
   if (s[0] === '"' || s[0] === "'") s = s.substring(1, s.length-1);
-  return symbols[s] || s;
+  return lookup(s) || s;
 }
 
 function execute(tree) {
