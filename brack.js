@@ -1,14 +1,15 @@
 var util = require('util');
 
-function tail(list, n) { return list.slice(n||1); }
-
 var builtin = {
   parent: null,
 
-  def: function(list) { user[list[1]] = list[2]; },
-  echo: function(list) { process.stdout.write(util.inspect(tail(list)) + '\n'); }
+  def: function(list) { user[list[0]] = execute(list[1]); },
+  lambda: function(list) { return lambda(list[0], list[1]); },
+  echo: function(list) { echo(list); process.stdout.write('\n'); }
 };
+
 var user = { parent: builtin };
+
 var symbols = [ builtin, user ];
 
 function lookup(name) {
@@ -16,6 +17,35 @@ function lookup(name) {
     if (dict[name]) return dict[name];
   }
   return null;
+}
+
+function echo(list) {
+  for (var i = 0; i < list.length; ++i) {
+    var s = evaluate(list[i]);
+    if (Array.isArray(s)) {
+      process.stdout.write('( ');
+      echo(s)
+      process.stdout.write(')');
+    } else {
+      process.stdout.write(s.toString());
+    }
+    process.stdout.write(' ');
+  }
+}
+
+function tail(list, n) { return list.slice(n||1); }
+
+function lambda(args, body) {
+  return function(list) {
+    var frame = { parent: symbols[symbols.length-1] };
+    for (var i = 0; i < args.length; ++i) {
+      frame[args[i]] = list[i];
+    };
+    symbols.push(frame);
+    var ret = execute(body);
+    symbols.pop();
+    return ret;
+  };
 }
 
 function category(c) {
@@ -75,13 +105,24 @@ function lex(s, parser) {
 }
 
 function evaluate(s) {
+  if (Array.isArray(s)) {
+    var ret = [];
+    for (var i = 0; i < s.length; ++i) {
+      ret.push(evaluate(s[i]));
+    }
+    return ret;
+  }
   if ((s[0] >= '0' && s[0] <= '9') || s[0] === '-') return Number(s);
   if (s[0] === '"' || s[0] === "'") s = s.substring(1, s.length-1);
   return lookup(s) || s;
 }
 
 function execute(tree) {
-  if (tree.length > 0 && 'function' === typeof(tree[0])) return tree[0](tree);
+  if (tree.length === 0) return tree;
+  var key = (Array.isArray(tree[0]))
+    ? execute(tree[0])
+    : evaluate(tree[0]);
+  if ('function' === typeof(key)) return key(tail(tree));
   return tree;
 }
 
@@ -95,14 +136,14 @@ function parser(token) {
     parse_tree = [];
     break;
   case 'symbol':
-    var value = evaluate(token.value);
-    parse_tree.push(value);
+    parse_tree.push(token.value);
     break;
   case 'close':
-    var value = execute(parse_tree) || '';
+    var value = parse_tree;
     parse_tree = parse_stack.pop();
     if (null == parse_tree) {
-      process.stdout.write(value.toString() + '\n');
+      var ret = execute(value);
+      if (ret) process.stdout.write(ret.toString() + '\n');
     } else {
       parse_tree.push(value);
     }
