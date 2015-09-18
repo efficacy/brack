@@ -55,20 +55,26 @@ function lex(s, parser) {
   }
 }
 
+var symbols = {
+  echo: function(tree) { console.log('echo tree=' + util.inspect(tree)); return ""; }
+};
+
 function evaluate(s) {
-  console.log('evaluate s=' + s);
-  return s;
+  if (s[0] == '"' || s[0] == "'") return s.substring(1, s.length-1);
+  if (s[0] >= '0' && s[0] <= '9') return Number(s);
+  return symbols[s] || s;
 }
 
 function execute(tree) {
-  console.log('execute tree=' + util.inspect(tree));
+  if (tree.length > 0 && 'function' === typeof(tree[0])) return tree[0](tree);
+  return tree;
 }
 
 var parse_stack = [];
 var parse_tree = null;
 
 function parser(token) {
-  console.log('got token type: ' + token.type + ' value: ' + token.value);
+//  console.log('got token type: ' + token.type + ' value: ' + token.value);
   switch(token.type) {
   case 'open':
     parse_stack.push(parse_tree);
@@ -79,16 +85,16 @@ function parser(token) {
     parse_tree.push(value);
     break;
   case 'close':
-    var value = parse_tree;
+    var value = execute(parse_tree);
     parse_tree = parse_stack.pop();
     if (null == parse_tree) {
-      execute(value);
+      console.log(value);
     } else {
       parse_tree.push(value);
     }
     break;
   }
-  console.log('parsed ' + token.type + ' tree: ' + util.inspect(parse_tree));
+//  console.log('parsed ' + token.type + ' tree: ' + util.inspect(parse_tree));
 }
 
 process.stdin.setEncoding('utf8');
