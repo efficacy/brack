@@ -5,7 +5,10 @@ var builtin = {
 
   def: function(list) { user[list[0]] = execute(list[1]); },
   lambda: function(list) { return lambda(list[0], list[1]); },
-  echo: function(list) { process.stdout.write(expand(list) + '\n'); }
+  map: function(list) { return map(execute(list[0]), tail(list)); },
+  reduce: function(list) { return reduce(execute(list[0]), tail(list)); },
+  echo: function(list) { process.stdout.write(expand(list) + '\n'); },
+  plus: function(list) { return execute(list[0]) + execute(list[1]); }
 };
 
 var user = { parent: builtin };
@@ -47,6 +50,23 @@ function lambda(args, body) {
     symbols.pop();
     return ret;
   };
+}
+
+function map(fn, list) {
+  var ret = [];
+  for (var i = 0; i < list.length; ++i) {
+    var result = fn(list[i]);
+    if (null != result) ret.push(result);
+  }
+  return ret;
+}
+
+function reduce(fn, list) {
+  var ret = execute(list[0]);
+  for (var i = 1; i < list.length; ++i) {
+    ret = fn([ret, list[i]]);
+  }
+  return ret;
 }
 
 function category(c) {
@@ -118,13 +138,15 @@ function evaluate(s) {
   return lookup(s) || s;
 }
 
-function execute(tree) {
-  if (tree.length === 0) return tree;
-  var key = (Array.isArray(tree[0]))
-    ? execute(tree[0])
-    : evaluate(tree[0]);
-  if ('function' === typeof(key)) return key(tail(tree));
-  return tree;
+function execute(s) {
+  if (Array.isArray(s)) {
+    var key = (Array.isArray(s[0]))
+      ? execute(s[0])
+      : evaluate(s[0]);
+    if ('function' === typeof(key)) return key(tail(s));
+    return s;
+  }
+  return evaluate(s);
 }
 
 var parse_stack = [];

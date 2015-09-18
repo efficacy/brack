@@ -45,27 +45,74 @@ requires functions. Luckily, some are supplied. More may come later ;)
   add a named entry to the user section of the symbol table
 
   ```
-  (def a 13) (a) => 13
+  (def a 13) (a) =>
+  13
   ```
 
   ```
-  (def "long name" (tinky-winky dipsy lala po)) ("long name") => tinky-winky dipsy lala po
+  (def "long name" (tinky-winky dipsy lala po)) ("long name") =>
+  tinky-winky dipsy lala po
   ```
 
 * **lambda**:
   the key to everything else: create a user-defined function
 
   ```
-  (def e (lambda (a) (echo "this is a" a)) (e "user function") => this is a user function
+  (def e (lambda (a) (echo "this is a" a)) (e "user function") =>
+  this is a user function
   ```
 
   ```
-  ((lambda (a) (echo "this is a" a)) "direct call") => this is a direct call
+  ((lambda (a) (echo "this is a" a)) "direct call") =>
+  this is a direct call
+  ```
+
+* **map**:
+  apply a named function to the remaining parameters and return the results as a list
+
+  ```
+  (map (lambda (x) (plus 2 x)) 1 2 3) =>
+  3,4,5
+  ```
+
+  ```
+  (map echo a b c) =>
+  a
+  b
+  c
+  ```
+
+* **reduce**:
+  apply a named function to pairs of the remaining parameters and accumulate the result
+
+  ```
+  (reduce plus 1 2 3) =>
+  6
+  ```
+
+  ```
+  (reduce plus a b c) =>
+  abc
   ```
 
 * **echo**:
   send its parameter to standard output, in a (mostly) human-readable format
 
   ```
-  (echo "hello, world") => hello, world
+  (echo "hello, world") =>
+  hello, world
   ```
+
+* **plus**:
+  "add" its first two parameters (numericallor textually, depending on the supplied values)
+
+  ```
+  (plus 1 2) =>
+  3
+  ```
+
+  ```
+  (plus a b) =>
+  ab
+  ```
+  
