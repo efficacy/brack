@@ -41,5 +41,11 @@ requires functions. Luckily, some are supplied. More may come later ;)
 
 ### Built-in Functions
 
+* **def**:
+  add a named entry to the symbol table
+  ```
+  (def a 13) (a)
+  (def "long name" (tinky-winky dipsy lala po)) ("long name")
+  ```
 * **echo**:
   send its parameter to standard output, in a (mostly) human-readable format

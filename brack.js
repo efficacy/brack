@@ -1,7 +1,11 @@
 var util = require('util');
 
+function tail(list, n) { return list.slice(n||1); }
+
 var symbols = {
-  echo: function(list) { process.stdout.write(util.inspect(list) + '\n'); return ""; }
+  def: function(list) { symbols[list[1]] = list[2]; },
+
+  echo: function(list) { process.stdout.write(util.inspect(tail(list)) + '\n'); }
 };
 
 function category(c) {
@@ -61,8 +65,8 @@ function lex(s, parser) {
 }
 
 function evaluate(s) {
-  if (s[0] === '"' || s[0] === "'") return s.substring(1, s.length-1);
   if ((s[0] >= '0' && s[0] <= '9') || s[0] === '-') return Number(s);
+  if (s[0] === '"' || s[0] === "'") s = s.substring(1, s.length-1);
   return symbols[s] || s;
 }
 
@@ -85,7 +89,7 @@ function parser(token) {
     parse_tree.push(value);
     break;
   case 'close':
-    var value = execute(parse_tree);
+    var value = execute(parse_tree) || '';
     parse_tree = parse_stack.pop();
     if (null == parse_tree) {
       process.stdout.write(value.toString() + '\n');
