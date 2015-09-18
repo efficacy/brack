@@ -56,11 +56,11 @@ requires functions. Luckily, some are supplied. More may come later ;)
   the key to everything else: create a user-defined function
 
   ```
-  (def e (lambda (a) (echo a)) (e "this is a user function") => this is a user function
+  (def e (lambda (a) (echo "this is a" a)) (e "user function") => this is a user function
   ```
 
   ```
-  ((lambda (a) (echo a)) "this is an immediate call") => this is an immediate call
+  ((lambda (a) (echo "this is a" a)) "direct call") => this is a direct call
   ```
 
 * **echo**:

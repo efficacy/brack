@@ -5,7 +5,7 @@ var builtin = {
 
   def: function(list) { user[list[0]] = execute(list[1]); },
   lambda: function(list) { return lambda(list[0], list[1]); },
-  echo: function(list) { echo(list); process.stdout.write('\n'); }
+  echo: function(list) { process.stdout.write(expand(list) + '\n'); }
 };
 
 var user = { parent: builtin };
@@ -19,18 +19,20 @@ function lookup(name) {
   return null;
 }
 
-function echo(list) {
+function expand(list) {
+  var ret = '';
   for (var i = 0; i < list.length; ++i) {
     var s = evaluate(list[i]);
+    console.log('evaluated ' + list[i] + ' to ' + s);
     if (Array.isArray(s)) {
-      process.stdout.write('( ');
-      echo(s)
-      process.stdout.write(')');
+      var val = execute(s);
+      if (null != val) ret += '( ' + val + ')';
     } else {
-      process.stdout.write(s.toString());
+      ret += s;
     }
-    process.stdout.write(' ');
+    ret += ' ';
   }
+  return ret;
 }
 
 function tail(list, n) { return list.slice(n||1); }
@@ -39,7 +41,7 @@ function lambda(args, body) {
   return function(list) {
     var frame = { parent: symbols[symbols.length-1] };
     for (var i = 0; i < args.length; ++i) {
-      frame[args[i]] = list[i];
+      frame[args[i]] = evaluate(list[i]);
     };
     symbols.push(frame);
     var ret = execute(body);
