@@ -23,7 +23,6 @@ function expand(list) {
   var ret = '';
   for (var i = 0; i < list.length; ++i) {
     var s = evaluate(list[i]);
-    console.log('evaluated ' + list[i] + ' to ' + s);
     if (Array.isArray(s)) {
       var val = execute(s);
       if (null != val) ret += '( ' + val + ')';
