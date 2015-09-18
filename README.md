@@ -43,9 +43,11 @@ requires functions. Luckily, some are supplied. More may come later ;)
 
 * **def**:
   add a named entry to the user section of the symbol table
+
   ```
   (def a 13) (a) => 13
   ```
+
   ```
   (def "long name" (tinky-winky dipsy lala po)) ("long name") => tinky-winky dipsy lala po
   ```
@@ -56,6 +58,7 @@ requires functions. Luckily, some are supplied. More may come later ;)
   ```
   (def e (lambda (a) (echo a)) (e "this is a user function") => this is a user function
   ```
+
   ```
   ((lambda (a) (echo a)) "this is an immediate call") => this is an immediate call
   ```
