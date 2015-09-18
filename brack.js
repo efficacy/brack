@@ -60,8 +60,8 @@ var symbols = {
 };
 
 function evaluate(s) {
-  if (s[0] == '"' || s[0] == "'") return s.substring(1, s.length-1);
-  if (s[0] >= '0' && s[0] <= '9') return Number(s);
+  if (s[0] === '"' || s[0] === "'") return s.substring(1, s.length-1);
+  if ((s[0] >= '0' && s[0] <= '9') || s[0] === '-') return Number(s);
   return symbols[s] || s;
 }
 
