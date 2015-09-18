@@ -1,11 +1,15 @@
 var util = require('util');
 
+var symbols = {
+  echo: function(list) { process.stdout.write(util.inspect(list) + '\n'); return ""; }
+};
+
 function category(c) {
-  if (c == '(') return 'open';
-  if (c == ')') return 'close';
-  if (c == '\'') return 'sq';
-  if (c == '"') return 'dq';
-  if (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f') return 'ws';
+  if (c === '(') return 'open';
+  if (c === ')') return 'close';
+  if (c === "'") return 'sq';
+  if (c === '"') return 'dq';
+  if (c === ' ' || c === '\t' || c === '\n' || c === '\r' || c === '\f') return 'ws';
   return 'letter';
 }
 
@@ -13,21 +17,22 @@ var lex_buf = '';
 var lex_status = 'outside';
 
 function lex(s, parser) {
-  function emit(type) {
-    lex_status = 'outside';
+  function token(type) {
     var value = '' + lex_buf;
     lex_buf = '';
+    lex_status = 'outside';
     parser({type: type, value: value});
   }
+
   var n = s.length;
   for (var i = 0; i < n; ++i) {
     c = s[i];
     var cc = category(c);
-//    console.log('status=' + lex_status + ' c=' + c + ' category=' + cc + ' buf=[' + lex_buf + ']');
+
     switch(cc) {
     case 'ws':
       if (lex_status == 'sq' || lex_status == 'dq') lex_buf += c;
-      if (lex_status == 'symbol') emit('symbol');
+      if (lex_status == 'symbol') token('symbol');
       break;
     case 'letter':
       lex_buf += c;
@@ -39,25 +44,21 @@ function lex(s, parser) {
       if (lex_status == 'outside') {
         lex_status = cc;
       } else if (lex_status == cc) {
-      	emit('symbol');
+        token('symbol');
       } 
       break;
     case 'open':
     case 'close':
-      if (lex_status == 'symbol') emit('symbol');
+      if (lex_status == 'symbol') token('symbol');
       if (lex_status == 'sq' || lex_status == 'dq') {
       	lex_buf += c;
       } else {
-        emit(cc);
+        token(cc);
       }
       break;
     }
   }
 }
-
-var symbols = {
-  echo: function(tree) { process.stdout.write(util.inspect(tree) + '\n'); return ""; }
-};
 
 function evaluate(s) {
   if (s[0] === '"' || s[0] === "'") return s.substring(1, s.length-1);
@@ -74,7 +75,6 @@ var parse_stack = [];
 var parse_tree = null;
 
 function parser(token) {
-//  console.log('got token type: ' + token.type + ' value: ' + token.value);
   switch(token.type) {
   case 'open':
     parse_stack.push(parse_tree);
@@ -94,7 +94,6 @@ function parser(token) {
     }
     break;
   }
-//  console.log('parsed ' + token.type + ' tree: ' + util.inspect(parse_tree));
 }
 
 process.stdin.setEncoding('utf8');
