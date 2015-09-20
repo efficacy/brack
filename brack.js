@@ -1,3 +1,4 @@
+var fs = require('fs');
 var util = require('util');
 
 var builtin = {
@@ -8,6 +9,7 @@ var builtin = {
   map: function(list) { return map(execute(list[0]), tail(list)); },
   reduce: function(list) { return reduce(execute(list[0]), tail(list)); },
   primitive: function(list) { return require(execute(list[0]))({ execute: execute }); },
+  include: function(list) { return include(execute(list[0])); },
 
   echo: function(list) { process.stdout.write(expand(list) + '\n'); },
   plus: function(list) { return execute(list[0]) + execute(list[1]); }
@@ -22,6 +24,10 @@ function lookup(name) {
     if (dict[name]) return dict[name];
   }
   return null;
+}
+
+function dump_dict() {
+  console.log(util.inspect(symbols[symbols.length-1]));
 }
 
 function expand(list) {
@@ -69,6 +75,11 @@ function reduce(fn, list) {
     ret = fn([ret, list[i]]);
   }
   return ret;
+}
+
+function include(fname) {
+  var content = fs.readFileSync(fname, {encoding: 'utf8'});
+  lex(content, parser);
 }
 
 function category(c) {
@@ -154,6 +165,15 @@ function execute(s) {
 var parse_stack = [];
 var parse_tree = null;
 
+function act(value) {
+  if (null == parse_tree) {
+    var ret = execute(value);
+    if (ret) process.stdout.write(ret.toString() + '\n');
+  } else {
+    parse_tree.push(value);
+  }
+}
+
 function parser(token) {
   switch(token.type) {
   case 'open':
@@ -161,17 +181,12 @@ function parser(token) {
     parse_tree = [];
     break;
   case 'symbol':
-    parse_tree.push(token.value);
+    act(token.value);
     break;
   case 'close':
     var value = parse_tree;
     parse_tree = parse_stack.pop();
-    if (null == parse_tree) {
-      var ret = execute(value);
-      if (ret) process.stdout.write(ret.toString() + '\n');
-    } else {
-      parse_tree.push(value);
-    }
+    act(value);
     break;
   }
 }
