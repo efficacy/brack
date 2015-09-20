@@ -54,6 +54,14 @@ requires functions. Luckily, some are supplied. More may come later ;)
   tinky-winky dipsy lala po
   ```
 
+* **primitive**:
+  load a function defined in a native programming language (in this case Javascript)
+
+  ```
+  (def minus (primitive "./library/minus.js")) (minus 5 4) =>
+  1
+  ```
+
 * **lambda**:
   the key to everything else: create a user-defined function
 

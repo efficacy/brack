@@ -7,6 +7,8 @@ var builtin = {
   lambda: function(list) { return lambda(list[0], list[1]); },
   map: function(list) { return map(execute(list[0]), tail(list)); },
   reduce: function(list) { return reduce(execute(list[0]), tail(list)); },
+  primitive: function(list) { return require(execute(list[0]))({ execute: execute }); },
+
   echo: function(list) { process.stdout.write(expand(list) + '\n'); },
   plus: function(list) { return execute(list[0]) + execute(list[1]); }
 };
