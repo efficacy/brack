@@ -9,7 +9,7 @@ var builtin = {
   map: function(list) { return map(execute(list[0]), tail(list)); },
   reduce: function(list) { return reduce(execute(list[0]), tail(list)); },
   primitive: function(list) { return require(execute(list[0]))({ execute: execute }); },
-  include: function(list) { return include(execute(list[0])); },
+  include: function(list) { return lex(fs.readFileSync(execute(list[0]), {encoding: 'utf8'}), parser); },
 
   echo: function(list) { process.stdout.write(expand(list) + '\n'); },
   plus: function(list) { return execute(list[0]) + execute(list[1]); }
@@ -75,11 +75,6 @@ function reduce(fn, list) {
     ret = fn([ret, list[i]]);
   }
   return ret;
-}
-
-function include(fname) {
-  var content = fs.readFileSync(fname, {encoding: 'utf8'});
-  lex(content, parser);
 }
 
 function category(c) {

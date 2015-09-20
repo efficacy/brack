@@ -62,6 +62,16 @@ requires functions. Luckily, some are supplied. More may come later ;)
   1
   ```
 
+* **include**:
+  execute the text of an external file
+
+  For example, if we have a file 'tmp.brack' containing '(def a 13)'
+
+  ```
+  (include "./tmp.brack") a =>
+  13
+  ```
+
 * **lambda**:
   the key to everything else: create a user-defined function
 
