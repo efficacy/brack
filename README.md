@@ -121,6 +121,14 @@ requires functions. Luckily, some are supplied. More may come later ;)
   hello, world
   ```
 
+### Library Functions
+
+## Math Library
+
+  ```
+  (include "./library/math.brack")
+  ```
+
 * **plus**:
   "add" its first two parameters (numerically or textually, depending on the supplied values)
 
@@ -132,5 +140,18 @@ requires functions. Luckily, some are supplied. More may come later ;)
   ```
   (plus a b) =>
   ab
+  ```
+
+* **minus**:
+  "subtract" its first two parameters (numerically or textually, depending on the supplied values)
+
+  ```
+  (minus 5 4) =>
+  1
+  ```
+
+  ```
+  (minus 2 12) =>
+  -10
   ```
   

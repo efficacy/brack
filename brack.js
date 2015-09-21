@@ -4,15 +4,15 @@ var util = require('util');
 var builtin = {
   parent: null,
 
-  def: function(list) { user[list[0]] = execute(list[1]); },
+  primitive: function(list) { return require(execute(list[0]))({ resolve: execute }); },
+  include: function(list) { var ret; lex(fs.readFileSync(execute(list[0]), {encoding: 'utf8'}), parser, function(value) { ret=value }); return ret; },
+  def: function(list) { user[execute(list[0])] = execute(list[1]); },
   lambda: function(list) { return lambda(list[0], list[1]); },
   map: function(list) { return map(execute(list[0]), tail(list)); },
   reduce: function(list) { return reduce(execute(list[0]), tail(list)); },
-  primitive: function(list) { return require(execute(list[0]))({ execute: execute }); },
-  include: function(list) { return lex(fs.readFileSync(execute(list[0]), {encoding: 'utf8'}), parser); },
 
   echo: function(list) { process.stdout.write(expand(list) + '\n'); },
-  plus: function(list) { return execute(list[0]) + execute(list[1]); }
+  dump: function(list) { dump_dict(); },
 };
 
 var user = { parent: builtin };
@@ -89,12 +89,12 @@ function category(c) {
 var lex_buf = '';
 var lex_status = 'outside';
 
-function lex(s, parser) {
+function lex(s, parser, reply) {
   function token(type) {
     var value = '' + lex_buf;
     lex_buf = '';
     lex_status = 'outside';
-    parser({type: type, value: value});
+    parser({type: type, value: value}, reply);
   }
 
   var n = s.length;
@@ -160,28 +160,28 @@ function execute(s) {
 var parse_stack = [];
 var parse_tree = null;
 
-function act(value) {
+function act(value, reply) {
   if (null == parse_tree) {
     var ret = execute(value);
-    if (ret) process.stdout.write(ret.toString() + '\n');
+    if (ret && reply) reply(ret);
   } else {
     parse_tree.push(value);
   }
 }
 
-function parser(token) {
+function parser(token, reply) {
   switch(token.type) {
   case 'open':
     parse_stack.push(parse_tree);
     parse_tree = [];
     break;
   case 'symbol':
-    act(token.value);
+    act(token.value, reply);
     break;
   case 'close':
     var value = parse_tree;
     parse_tree = parse_stack.pop();
-    act(value);
+    act(value, reply);
     break;
   }
 }
@@ -191,10 +191,10 @@ process.stdin.setEncoding('utf8');
 process.stdin.on('readable', function() {
   var chunk = process.stdin.read();
   if (chunk !== null) {
-    lex(chunk, parser);
+    lex(chunk, parser, function(value) { process.stdout.write(value.toString() + '\n'); });
   }
 });
 
 process.stdin.on('end', function() {
-  lex(' ', parser);
+  lex('\n', parser, function(value) { process.stdout.write(value.toString() + '\n'); });
 });
