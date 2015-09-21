@@ -1,36 +1,16 @@
 /*jslint node: true */
 "use strict";
 
+var test = require('tape');
 var brack = require ('../brack');
 
-module.exports = function(test, done) {
+test('parse simple values, no brackets', function (t) {
 
-  var buf = '';
-  function catcher(s) {
-    buf += s;
-  }
-
-  test('simple values, no brackets', function (t) {
-    t.plan(5);
-
-    buf = '';
-    brack('hello', catcher);
-    t.equal(buf, 'hello', 'string should be just sent to output');
-
-    buf = '';
-    brack('12', catcher);
-    t.equal(buf, '12', 'number should be just sent to output');
-
-    buf = '';
-    brack('-04', catcher);
-    t.equal(buf, '-4', 'negative number should be just sent to output');
-
-    buf = '';
-    brack('"tinky winky"', catcher);
-    t.equal(buf, 'tinky winky', 'quoted string should be just sent to output');
-
-    buf = '';
-    brack('"04"', catcher);
-    t.equal(buf, '04', 'quoted number should be just sent to output');
-  });
-};
+  t.equal(brack('hello'), 'hello', "text should just be text");
+  t.equal(brack('12'), '12', "numbers should be numbers");
+  t.equal(brack('-04'), '-4', "negatives should still be negative");
+  t.equal(brack('"tinky winky"'), 'tinky winky', "quoted text should also be text");
+  t.equal(brack('"04"'), '04', "quoted numbers are strings");
+  
+  t.end();
+});

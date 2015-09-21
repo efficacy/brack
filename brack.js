@@ -5,15 +5,15 @@ var fs = require('fs');
 var util = require('util');
 
 var builtin = {
-  primitive: function(list) { return require(execute(list[0]))({ resolve: execute }); },
-  include: function(list) { var ret; lex(fs.readFileSync(execute(list[0]), {encoding: 'utf8'}), parser, function(value) { ret=value }); return ret; },
-  def: function(list) { user[execute(list[0])] = execute(list[1]); },
-  lambda: function(list) { return lambda(list[0], list[1]); },
-  map: function(list) { return map(execute(list[0]), tail(list)); },
-  reduce: function(list) { return reduce(execute(list[0]), tail(list)); },
+  primitive: function(context, list) { return require(resolve(list[0], context))({ resolve: resolve }); },
+  include: function(context, list) { return include(resolve(list[0], context), context); },
+  def: function(context, list) { user[resolve(list[0], context)] = resolve(list[1], context); },
+  lambda: function(context, list) { return lambda(list[0], list[1], context); },
+  map: function(context, list) { return map(resolve(list[0], context), tail(list)); },
+  reduce: function(context, list) { return reduce(resolve(list[0], context), tail(list)); },
 
-  echo: function(list) { process.stdout.write(expand(list) + '\n'); },
-  dump: function(list) { dump_dict(); },
+  echo: function(context, list) { echo(list, context); },
+  dump: function(context, list) { console.log(util.inspect(symbols[symbols.length-1])); },
 };
 
 var user = { parent: builtin };
@@ -27,54 +27,63 @@ function lookup(name) {
   return null;
 }
 
-function dump_dict() {
-  console.log(util.inspect(symbols[symbols.length-1]));
-}
-
-function expand(list) {
-  var ret = '';
-  for (var i = 0; i < list.length; ++i) {
-    var s = evaluate(list[i]);
-    if (Array.isArray(s)) {
-      var val = execute(s);
-      if (null != val) ret += '( ' + val + ')';
-    } else {
-      ret += s;
-    }
-    ret += ' ';
-  }
-  return ret;
-}
-
 function tail(list, n) { return list.slice(n||1); }
 
-function lambda(args, body) {
-  return function(list) {
+function lambda(args, body, context) {
+  return function(context, list) {
     var frame = { parent: symbols[symbols.length-1] };
     for (var i = 0; i < args.length; ++i) {
-      frame[args[i]] = evaluate(list[i]);
+      frame[args[i]] = resolve(list[i]);
     };
     symbols.push(frame);
-    var ret = execute(body);
+    var ret = resolve(body, context);
     symbols.pop();
     return ret;
   };
 }
 
-function map(fn, list) {
+function map(context, fn, list) {
   var ret = [];
   for (var i = 0; i < list.length; ++i) {
-    var result = fn(list[i]);
+    var result = fn(context, list[i]);
     if (null != result) ret.push(result);
   }
   return ret;
 }
 
-function reduce(fn, list) {
-  var ret = execute(list[0]);
+function reduce(context, fn, list) {
+  var ret = resolve(list[0], context);
   for (var i = 1; i < list.length; ++i) {
     ret = fn([ret, list[i]]);
   }
+  return ret;
+}
+
+function include(fname, context) {
+  context.stack.push(context.current);
+  context.current = [];
+  lex_chunk(fs.readFileSync(fname, {encoding: 'utf8'}), context);
+  var value = resolve(context.current, context);
+  context.current = context.stack.pop();
+  context.current.pop(); //'overwrite' the include
+  context.current.push(value);
+  return context.current;
+}
+
+function evaluate(s, context) {
+  if (null == s) return null;
+  if ((s[0] >= '0' && s[0] <= '9') || s[0] === '-') return Number(s);
+  if (s[0] === '"' || s[0] === "'") s = s.substring(1, s.length-1);
+  return lookup(s) || s;
+}
+
+function resolve(list, context) {
+  if (!Array.isArray(list)) return evaluate(list, context);
+
+  var key = resolve(list[0]);
+  if ('function' !== typeof(key)) return list;
+
+  var ret = key(context, list.slice(1));
   return ret;
 }
 
@@ -87,15 +96,14 @@ function category(c) {
   return 'letter';
 }
 
-var lex_buf = '';
-var lex_status = 'outside';
+function new_context(writer) { return { buf: '', status: 'outside', stack: [], current: [], writer: writer }; }
 
-function lex(s, parser, reply) {
+function lex_chunk(s, context) {
   function token(type) {
-    var value = '' + lex_buf;
-    lex_buf = '';
-    lex_status = 'outside';
-    parser({type: type, value: value}, reply);
+    var value = '' + context.buf;
+    context.buf = '';
+    context.status = 'outside';
+    parser({type: type, value: value}, context);
   }
 
   var n = s.length;
@@ -105,27 +113,27 @@ function lex(s, parser, reply) {
 
     switch(cc) {
     case 'ws':
-      if (lex_status == 'sq' || lex_status == 'dq') lex_buf += c;
-      if (lex_status == 'symbol') token('symbol');
+      if (context.status == 'sq' || context.status == 'dq') context.buf += c;
+      if (context.status == 'symbol') token('symbol');
       break;
     case 'letter':
-      lex_buf += c;
-      if (lex_status == 'outside') lex_status = 'symbol';
+      context.buf += c;
+      if (context.status == 'outside') context.status = 'symbol';
       break;
     case 'sq':
     case 'dq':
-      lex_buf += c;
-      if (lex_status == 'outside') {
-        lex_status = cc;
-      } else if (lex_status == cc) {
+      context.buf += c;
+      if (context.status == 'outside') {
+        context.status = cc;
+      } else if (context.status == cc) {
         token('symbol');
       } 
       break;
     case 'open':
     case 'close':
-      if (lex_status == 'symbol') token('symbol');
-      if (lex_status == 'sq' || lex_status == 'dq') {
-      	lex_buf += c;
+      if (context.status == 'symbol') token('symbol');
+      if (context.status == 'sq' || context.status == 'dq') {
+        context.buf += c;
       } else {
         token(cc);
       }
@@ -134,77 +142,68 @@ function lex(s, parser, reply) {
   }
 }
 
-function evaluate(s) {
+function echo(s, context) {
+  if (null == s) return;
   if (Array.isArray(s)) {
-    var ret = [];
-    for (var i = 0; i < s.length; ++i) {
-      ret.push(evaluate(s[i]));
+    var n = s.length;
+    for (var i = 0; i < n; ++i) {
+      var value = resolve(s[i], context);
+      if (null != value) echo(value, context);
     }
-    return ret;
-  }
-  if ((s[0] >= '0' && s[0] <= '9') || s[0] === '-') return Number(s);
-  if (s[0] === '"' || s[0] === "'") s = s.substring(1, s.length-1);
-  return lookup(s) || s;
-}
-
-function execute(s) {
-  if (Array.isArray(s)) {
-    var key = (Array.isArray(s[0]))
-      ? execute(s[0])
-      : evaluate(s[0]);
-    if ('function' === typeof(key)) return key(tail(s));
-    return s;
-  }
-  return evaluate(s);
-}
-
-var parse_stack = [];
-var parse_tree = null;
-
-function act(value, reply) {
-  if (null == parse_tree) {
-    var ret = execute(value);
-    if (ret && reply) reply(ret);
   } else {
-    parse_tree.push(value);
+    context.writer(s);
   }
 }
 
-function parser(token, reply) {
+function lex_end(context) {
+  lex_chunk('\n', context);
+  var n = context.current.length;
+  for (var i = 0; i < n; ++i) {
+    var value = resolve(context.current[i], context);
+    if (null != value) context.writer(value);
+  }
+}
+
+function parser(token, context) {
   switch(token.type) {
   case 'open':
-    parse_stack.push(parse_tree);
-    parse_tree = [];
+    context.stack.push(context.current);
+    context.current = [];
     break;
   case 'symbol':
-    act(token.value, reply);
+    context.current.push(token.value);
     break;
   case 'close':
-    var value = parse_tree;
-    parse_tree = parse_stack.pop();
-    act(value, reply);
+    var value = context.current;
+    context.current = context.stack.pop();
+    context.current.push(value);
     break;
   }
 }
 
-module.exports = function(script, reply) {
-  lex(script + '\n', parser, function(value) {
-    reply(value);
-  });
+module.exports = function(script) {
+  var out = '';
+  var context = new_context(function(s) { out += s; });
+  lex_chunk(script + '\n', context);
+  lex_end(context);
+  return out;
 }
 
-if (module === require.main) {
-  process.stdin.setEncoding('utf8');
+module.exports.resolve = resolve;
 
+if (module === require.main) {
+  var context = new_context(function(s) { process.stdout.write(s.toString()); });
+
+  process.stdin.setEncoding('utf8');
   process.stdin.on('readable', function() {
     var chunk = process.stdin.read();
     if (chunk !== null) {
-      lex(chunk, parser, function(value) { process.stdout.write(value.toString() + '\n'); });
+      lex_chunk(chunk, context);
     }
   });
 
   process.stdin.on('end', function() {
-    lex('\n', parser, function(value) { process.stdout.write(value.toString() + '\n'); });
+    lex_end(context);
+    process.stdout.write('\n');
   });
 }
-

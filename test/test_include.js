@@ -1,0 +1,15 @@
+/*jslint node: true */
+"use strict";
+
+var test = require('tape');
+var brack = require ('../brack');
+
+test('include plain text', function (t) {
+  t.equal(brack('(include "test/input/hello.txt")'), 'hello', "included plain text should pass through");
+  t.end();
+});
+
+test('include and assign', function (t) {
+  t.equal(brack('(def a (include "test/input/hello.txt")) "say " a'), 'say hello', "included plain text should act as a value");
+  t.end();
+});
