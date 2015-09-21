@@ -1,9 +1,10 @@
+/*jslint node: true */
+"use strict";
+
 var fs = require('fs');
 var util = require('util');
 
 var builtin = {
-  parent: null,
-
   primitive: function(list) { return require(execute(list[0]))({ resolve: execute }); },
   include: function(list) { var ret; lex(fs.readFileSync(execute(list[0]), {encoding: 'utf8'}), parser, function(value) { ret=value }); return ret; },
   def: function(list) { user[execute(list[0])] = execute(list[1]); },
@@ -99,7 +100,7 @@ function lex(s, parser, reply) {
 
   var n = s.length;
   for (var i = 0; i < n; ++i) {
-    c = s[i];
+    var c = s[i];
     var cc = category(c);
 
     switch(cc) {
@@ -186,15 +187,24 @@ function parser(token, reply) {
   }
 }
 
-process.stdin.setEncoding('utf8');
+module.exports = function(script, reply) {
+  lex(script + '\n', parser, function(value) {
+    reply(value);
+  });
+}
 
-process.stdin.on('readable', function() {
-  var chunk = process.stdin.read();
-  if (chunk !== null) {
-    lex(chunk, parser, function(value) { process.stdout.write(value.toString() + '\n'); });
-  }
-});
+if (module === require.main) {
+  process.stdin.setEncoding('utf8');
 
-process.stdin.on('end', function() {
-  lex('\n', parser, function(value) { process.stdout.write(value.toString() + '\n'); });
-});
+  process.stdin.on('readable', function() {
+    var chunk = process.stdin.read();
+    if (chunk !== null) {
+      lex(chunk, parser, function(value) { process.stdout.write(value.toString() + '\n'); });
+    }
+  });
+
+  process.stdin.on('end', function() {
+    lex('\n', parser, function(value) { process.stdout.write(value.toString() + '\n'); });
+  });
+}
+
