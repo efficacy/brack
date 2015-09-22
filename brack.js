@@ -164,6 +164,10 @@ function lex_end(context) {
   }
 }
 
+function record(value, context) {
+  context.current.push(value);
+}
+
 function parser(token, context) {
   switch(token.type) {
   case 'open':
@@ -171,12 +175,12 @@ function parser(token, context) {
     context.current = [];
     break;
   case 'symbol':
-    context.current.push(token.value);
+    record(token.value, context);
     break;
   case 'close':
     var value = context.current;
     context.current = context.stack.pop();
-    context.current.push(value);
+    record(value, context);
     break;
   }
 }
