@@ -27,16 +27,16 @@ To use with a script
 
 ## The Language
 
-It's a lisp-like, so everything is brackets. '(' starts a list. ')' finishes and evaluates it, whitespace separates symbols. Lists may be nested. Symbols starting with a digit or '-' are treated as numbers, everything else is a string. 
+It's a lisp-like, so everything is brackets. '(' starts a list. ')' finishes it, whitespace separates symbols. Lists may be nested. Symbols starting with a digit or '-' are treated as numbers, everything else is a string. 
 Strings can be quoted with single- or double-quotes (no escaping yet).
 
 When _evaluating_ symbols are looked up in the cascading symbol table, and lists are executed. 
 
-When _executing_ the first (head) item is evaluated. If it is a function,
+When _resolving_ the first (head) item is evaluated. If it is a function,
 the result is the return value of executing the function, passing the list as a parameter. 
 If it is not a function, the result is the list itself.
 
-The language itself does nothing other than parse and evaluate lists. To do any real work 
+The language itself does nothing other than parse and resolve lists. To do any real work 
 requires functions. Luckily, some are supplied. More may come later ;)
 
 ### Built-in Functions
@@ -45,7 +45,7 @@ requires functions. Luckily, some are supplied. More may come later ;)
   add a named entry to the user section of the symbol table
 
   ```
-  (def a 13) (a) =>
+  (def a 13) a =>
   13
   ```
 
@@ -76,17 +76,17 @@ requires functions. Luckily, some are supplied. More may come later ;)
   the key to everything else: create a user-defined function
 
   ```
-  (def e (lambda (a) (echo "this is a" a)) (e "user function") =>
-  this is a user function
+  ((lambda (a) (echo "this is a " a)) "world of miracles and wonders") =>
+  this is a world of miracles and wonders
   ```
 
   ```
-  ((lambda (a) (echo "this is a" a)) "direct call") =>
-  this is a direct call
+  (def e (lambda (a) (echo "this is a " a)) (e "long-distance call") =>
+  this is a long-distance call
   ```
 
 * **map**:
-  apply a named function to the remaining parameters and return the results as a list
+  apply a function to the remaining parameters and return the results as a list
 
   ```
   (map (lambda (x) (plus 2 x)) 1 2 3) =>
@@ -119,6 +119,16 @@ requires functions. Luckily, some are supplied. More may come later ;)
   ```
   (echo "hello, world") =>
   hello, world
+  ```
+
+  ```
+  (echo lala po) =>
+  lalapo
+  ```
+
+  ```
+  (echo lala ' ' po) =>
+  lala po
   ```
 
 ### Library Functions
