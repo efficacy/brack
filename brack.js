@@ -71,12 +71,15 @@ function include(fname, context) {
 }
 
 function echo(s, context) {
-  if (null == s) return;
+  if (null == s || 'function' === typeof(s)) return;
   if (Array.isArray(s)) {
     var n = s.length;
     for (var i = 0; i < n; ++i) {
       var value = resolve(s[i], context);
-      if (null != value) echo(value, context);
+      if (null != value) {
+        if (i > 0) echo (' ', context);
+        echo(value, context);
+      }
     }
   } else {
     context.writer(s);
@@ -165,7 +168,12 @@ function lex_end(context) {
 }
 
 function record(value, context) {
-  context.current.push(value);
+  if (context.immediate && context.stack.length == 0) {
+    echo(resolve(value, context), context);
+    echo('\n', context);
+  } else {
+    context.current.push(value);
+  }
 }
 
 function parser(token, context) {
@@ -197,6 +205,7 @@ module.exports.resolve = resolve;
 
 if (module === require.main) {
   var context = new_context(function(s) { process.stdout.write(s.toString()); });
+  context.immediate = process.stdout.isTTY;
 
   process.stdin.setEncoding('utf8');
   process.stdin.on('readable', function() {
