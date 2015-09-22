@@ -70,6 +70,19 @@ function include(fname, context) {
   return context.current;
 }
 
+function echo(s, context) {
+  if (null == s) return;
+  if (Array.isArray(s)) {
+    var n = s.length;
+    for (var i = 0; i < n; ++i) {
+      var value = resolve(s[i], context);
+      if (null != value) echo(value, context);
+    }
+  } else {
+    context.writer(s);
+  }
+}
+
 function evaluate(s, context) {
   if (null == s) return null;
   if ((s[0] >= '0' && s[0] <= '9') || s[0] === '-') return Number(s);
@@ -139,19 +152,6 @@ function lex_chunk(s, context) {
       }
       break;
     }
-  }
-}
-
-function echo(s, context) {
-  if (null == s) return;
-  if (Array.isArray(s)) {
-    var n = s.length;
-    for (var i = 0; i < n; ++i) {
-      var value = resolve(s[i], context);
-      if (null != value) echo(value, context);
-    }
-  } else {
-    context.writer(s);
   }
 }
 
