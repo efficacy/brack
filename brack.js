@@ -60,13 +60,26 @@ function reduce(context, fn, list) {
 }
 
 function include(fname, context) {
-  context.stack.push(context.current);
-  context.current = [];
+  console.log('include(' + fname + ')');
+  context.push();
+  console.log('include pushed, context=' + context.dump());
   lex_chunk(fs.readFileSync(fname, {encoding: 'utf8'}), context);
+  console.log('include lexed file, context=' + context.dump());
   var value = resolve(context.current, context);
-  context.current = context.stack.pop();
-  context.current.pop(); //'overwrite' the include
-  context.current.push(value);
+  console.log('include resolved, value=' + util.inspect(value));
+  context.pop();
+  console.log('include popped, context=' + context.dump());
+  context.drop(); // 'overwrite' the include
+  console.log('include dropped, context=' + context.dump());
+  if (Array.isArray(value)) {
+    value.forEach(function(val) {
+      context.record(val);
+      console.log('include recorded(' + val + '), context=' + context.dump());
+    });
+  } else {
+    context.record(value);
+    console.log('include recorded(' + value + '), context=' + context.dump());
+  }
   return context.current;
 }
 
@@ -112,7 +125,50 @@ function category(c) {
   return 'letter';
 }
 
-function new_context(writer) { return { buf: '', status: 'outside', stack: [], current: [], writer: writer }; }
+function new_context(writer) {
+  return {
+    buf: '',
+    status: 'outside',
+    stack: [],
+    current: [],
+    cursor: null,
+    writer: writer,
+
+    push: function push() {
+      this.stack.push({ cursor: this.cursor, current: this.current });
+      this.current = [];
+    },
+    pop: function pop() {
+      var popped = this.stack.pop();
+      this.cursor = popped.cursor;
+      this.current = popped.current;
+    },
+    drop: function drop() {
+      if (this.current.length > 0) {
+        if (null == this.cursor || this.cursor >= this.current.length) {
+          this.current.pop();
+        } else {
+          this.current.splice(this.cursor, 1);
+        }
+      } 
+    },
+    record: function record(value) {
+      if (this.immediate && this.stack.length == 0) {
+        echo(resolve(value, this), this);
+        echo('\n', this);
+      } else {
+        if (null == this.cursor || this.cursor >= this.current.length) {
+          this.current.push(value);
+        } else {
+          this.current.splice(cursor, 0, value);
+        }
+      }
+    },
+    dump: function dump() {
+     return JSON.stringify(this); 
+    }
+  };
+}
 
 function lex_chunk(s, context) {
   function token(type) {
@@ -167,28 +223,18 @@ function lex_end(context) {
   }
 }
 
-function record(value, context) {
-  if (context.immediate && context.stack.length == 0) {
-    echo(resolve(value, context), context);
-    echo('\n', context);
-  } else {
-    context.current.push(value);
-  }
-}
-
 function parser(token, context) {
   switch(token.type) {
   case 'open':
-    context.stack.push(context.current);
-    context.current = [];
+    context.push();
     break;
   case 'symbol':
-    record(token.value, context);
+    context.record(token.value);
     break;
   case 'close':
     var value = context.current;
-    context.current = context.stack.pop();
-    record(value, context);
+    context.pop();
+    context.record(value);
     break;
   }
 }
