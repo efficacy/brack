@@ -3,17 +3,17 @@
 
 var fs = require('fs');
 var util = require('util');
+var Cursor = require('./list').Cursor;
 
 var builtin = {
-  primitive: function(context, list) { return require(resolve(list[0], context))({ resolve: resolve }); },
-  include: function(context, list) { return include(resolve(list[0], context), context); },
-  def: function(context, list) { user[resolve(list[0], context)] = resolve(list[1], context); },
-  lambda: function(context, list) { return lambda(list[0], list[1], context); },
-  map: function(context, list) { return map(resolve(list[0], context), tail(list)); },
-  reduce: function(context, list) { return reduce(resolve(list[0], context), tail(list)); },
+//  primitive: function(context, list) { return require(resolve(list[0], context))({ resolve: resolve }); },
+//  include: function(context, list) { return include(resolve(list[0], context), context); },
+//  def: function(context, list) { user[resolve(list[0], context)] = resolve(list[1], context); },
+//  lambda: function(context, list) { return lambda(list[0], list[1], context); },
+//  map: function(context, list) { return map(resolve(list[0], context), tail(list)); },
+//  reduce: function(context, list) { return reduce(resolve(list[0], context), tail(list)); },
 
-  echo: function(context, list) { echo(list, context); },
-  dump: function(context, list) { console.log(util.inspect(symbols[symbols.length-1])); },
+  echo: function(tail, context) { echo(tail, context); }
 };
 
 var user = { parent: builtin };
@@ -83,20 +83,27 @@ function include(fname, context) {
   return context.current;
 }
 
-function echo(s, context) {
-  if (null == s || 'function' === typeof(s)) return;
-  if (Array.isArray(s)) {
-    var n = s.length;
-    for (var i = 0; i < n; ++i) {
-      var value = resolve(s[i], context);
-      if (null != value) {
-        if (i > 0) echo (' ', context);
-        echo(value, context);
+function echo(tail, context) {
+  console.log('echo: tail=' + new Cursor(tail).dump());
+  var c = new Cursor(tail);
+  var had = false;
+  function record(s) {
+    if (had) context.writer(' ');
+    context.writer(s);
+    had = true;
+  }
+  c.walk(function(link) {
+    if (link.value) {
+      if (link.value.is_link) {
+        if (had) context.writer(' ');
+        echo(link.value, context);
+      } else {
+        record(evaluate(link.value, context));
       }
     }
-  } else {
-    context.writer(s);
-  }
+  });
+
+  c.walk(function(entry) { var val = resolve(entry.value, context); if (null != val) context.writer(val); })
 }
 
 function evaluate(s, context) {
@@ -106,13 +113,15 @@ function evaluate(s, context) {
   return lookup(s) || s;
 }
 
-function resolve(list, context) {
-  if (!Array.isArray(list)) return evaluate(list, context);
+function resolve(link, context) {
+  if (null == link) return null;
+  if (!link.is_link) return evaluate(link);
+  if (!link.value.is_link) return evaluate(link.value, context);
 
-  var key = resolve(list[0]);
-  if ('function' !== typeof(key)) return list;
+  var key = resolve(link.value.value, context);
+  if ('function' !== typeof(key)) return link.value;
 
-  var ret = key(context, list.slice(1));
+  var ret = key(link.value.next, context);
   return ret;
 }
 
@@ -126,46 +135,36 @@ function category(c) {
 }
 
 function new_context(writer) {
+  var cursor = new Cursor();
+  var root = cursor.insert(null);
   return {
     buf: '',
     status: 'outside',
-    stack: [],
-    current: [],
-    cursor: null,
+    root: root,
+    cursor: cursor,
     writer: writer,
 
     push: function push() {
-      this.stack.push({ cursor: this.cursor, current: this.current });
-      this.current = [];
+      this.cursor.push();
     },
     pop: function pop() {
-      var popped = this.stack.pop();
-      this.cursor = popped.cursor;
-      this.current = popped.current;
+      this.cursor.pop();
     },
     drop: function drop() {
-      if (this.current.length > 0) {
-        if (null == this.cursor || this.cursor >= this.current.length) {
-          this.current.pop();
-        } else {
-          this.current.splice(this.cursor, 1);
-        }
-      } 
+      this.cursor.unlink();
     },
     record: function record(value) {
-      if (this.immediate && this.stack.length == 0) {
+      if (null == value) return;
+      console.log('record ' + value);
+      if (this.immediate && this.cursor.up == null) {
         echo(resolve(value, this), this);
         echo('\n', this);
       } else {
-        if (null == this.cursor || this.cursor >= this.current.length) {
-          this.current.push(value);
-        } else {
-          this.current.splice(cursor, 0, value);
-        }
+        this.cursor.insert(value);
       }
     },
     dump: function dump() {
-     return JSON.stringify(this); 
+     return new Cursor(this.root).dump();
     }
   };
 }
@@ -199,7 +198,7 @@ function lex_chunk(s, context) {
         context.status = cc;
       } else if (context.status == cc) {
         token('symbol');
-      } 
+      }
       break;
     case 'open':
     case 'close':
@@ -216,14 +215,17 @@ function lex_chunk(s, context) {
 
 function lex_end(context) {
   lex_chunk('\n', context);
-  var n = context.current.length;
-  for (var i = 0; i < n; ++i) {
-    var value = resolve(context.current[i], context);
+  console.log('lex_end: ' + context.dump());
+  var c = new Cursor(context.root);
+  c.walk(function(entry) {
+    console.log('walking, entry=' + util.inspect(entry));
+    var value = resolve(entry, context);
     if (null != value) context.writer(value);
-  }
+  });
 }
 
 function parser(token, context) {
+  console.log('parser(' + token.type + ',' + token.value + ') tree=' + context.dump());
   switch(token.type) {
   case 'open':
     context.push();
@@ -232,9 +234,7 @@ function parser(token, context) {
     context.record(token.value);
     break;
   case 'close':
-    var value = context.current;
     context.pop();
-    context.record(value);
     break;
   }
 }

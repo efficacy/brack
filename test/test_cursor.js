@@ -40,5 +40,13 @@ test('insert on single', function (t) {
   t.equal(head.prev, null, 'original link should have no prev');
   t.equal(head.next, fresh, 'original link should have new next');
   t.equal(head.value, 'lala', 'original link should get correct value');
+
+  var c2 = new Cursor(head);
+  t.equal(c2.get(), 'lala', 'new cursor head should get correct value');
+  c2.forward();
+  t.equal(c2.get(), 'po', 'new cursor forward should get correct value');
+  c2.back();
+  t.equal(c2.get(), 'lala', 'new cursor back should get correct value');
+
   t.end();
 });
