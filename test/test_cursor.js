@@ -50,3 +50,90 @@ test('insert on single', function (t) {
 
   t.end();
 });
+
+test('unlink at end', function (t) {
+  var cc = new Cursor();
+  var a = cc.insert('a');
+  var b = cc.insert('b');
+  var c = cc.insert('c');
+
+  t.equal(cc.link, c, 'cursor is at end of list');
+  
+  t.equal(a.prev, null, 'a has correct prev');
+  t.equal(b.prev, a, 'b has correct prev');
+  t.equal(c.prev, b, 'c has correct prev');
+
+  t.equal(a.next, b, 'a has correct next');
+  t.equal(b.next, c, 'b has correct next');
+  t.equal(c.next, null, 'c has correct next');
+
+  cc.unlink();
+
+  t.equal(cc.link, b, 'cursor is no longer at end of list');
+  
+  t.equal(a.prev, null, 'a has correct prev');
+  t.equal(b.prev, a, 'b has correct prev');
+  t.equal(c.prev, b, 'c has old prev');
+
+  t.equal(a.next, b, 'a has correct next');
+  t.equal(b.next, null, 'b has correct next');
+  t.equal(c.next, null, 'c has old next');
+  
+  var d = cc.insert('d');
+  
+  t.equal(a.prev, null, 'a has correct prev');
+  t.equal(b.prev, a, 'b has correct prev');
+  t.equal(d.prev, b, 'd has correct prev');
+
+  t.equal(a.next, b, 'a has correct next');
+  t.equal(b.next, d, 'b has correct next');
+  t.equal(d.next, null, 'd has correct next');
+
+
+  t.end();
+});
+
+test('unlink in middle', function (t) {
+  var cc = new Cursor();
+  var a = cc.insert('a');
+  var b = cc.insert('b');
+  var c = cc.insert('c');
+
+  t.equal(cc.link, c, 'cursor is at end of list');
+  
+  t.equal(a.prev, null, 'a has correct prev');
+  t.equal(b.prev, a, 'b has correct prev');
+  t.equal(c.prev, b, 'c has correct prev');
+
+  t.equal(a.next, b, 'a has correct next');
+  t.equal(b.next, c, 'b has correct next');
+  t.equal(c.next, null, 'c has correct next');
+
+  cc.back();
+  t.equal(cc.link, b, 'cursor is no longer at end of list');
+
+  cc.unlink();
+  t.equal(cc.link, a, 'cursor is at previous entry');
+  
+  t.equal(a.prev, null, 'a has correct prev');
+  t.equal(b.prev, a, 'b has old prev');
+  t.equal(c.prev, a, 'c has correct prev');
+
+  t.equal(a.next, c, 'a has correct next');
+  t.equal(b.next, c, 'b has old next');
+  t.equal(c.next, null, 'c has correct next');
+  
+  var d = cc.insert('d');
+  console.log('after insert: ' + new Cursor(a).dump());
+  
+  t.equal(a.prev, null, 'a has correct prev');
+  t.equal(d.prev, a, 'd has correct prev');
+  t.equal(c.prev, d, 'c has correct prev');
+
+  t.equal(a.next, d, 'a has correct next');
+  t.equal(d.next, c, 'd has correct next');
+  t.equal(c.next, null, 'c has correct next');
+
+
+  t.end();
+});

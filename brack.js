@@ -7,7 +7,7 @@ var Cursor = require('./list').Cursor;
 
 var builtin = {
 //  primitive: function(context, list) { return require(resolve(list[0], context))({ resolve: resolve }); },
-//  include: function(context, list) { return include(resolve(list[0], context), context); },
+  include: function(tail, context) { include(tail, context); },
 //  def: function(context, list) { user[resolve(list[0], context)] = resolve(list[1], context); },
 //  lambda: function(context, list) { return lambda(list[0], list[1], context); },
 //  map: function(context, list) { return map(resolve(list[0], context), tail(list)); },
@@ -59,8 +59,10 @@ function reduce(context, fn, list) {
   return ret;
 }
 
-function include(fname, context) {
-  console.log('include(' + fname + ')');
+function include(tail, context) {
+  var fname = resolve(tail.value, context);
+  console.log('include(' + fname + '), context=' + context.dump());
+  var here = context.cursor.link; 
   context.push();
   console.log('include pushed, context=' + context.dump());
   lex_chunk(fs.readFileSync(fname, {encoding: 'utf8'}), context);
@@ -69,17 +71,8 @@ function include(fname, context) {
   console.log('include resolved, value=' + util.inspect(value));
   context.pop();
   console.log('include popped, context=' + context.dump());
-  context.drop(); // 'overwrite' the include
+  new Cursor(here).unlink();
   console.log('include dropped, context=' + context.dump());
-  if (Array.isArray(value)) {
-    value.forEach(function(val) {
-      context.record(val);
-      console.log('include recorded(' + val + '), context=' + context.dump());
-    });
-  } else {
-    context.record(value);
-    console.log('include recorded(' + value + '), context=' + context.dump());
-  }
   return context.current;
 }
 
@@ -151,7 +144,11 @@ function new_context(writer) {
       this.cursor.pop();
     },
     drop: function drop() {
+      var current = this.cursor.link; 
       this.cursor.unlink();
+      if (this.root === current) {
+        this.root = current.next;
+      }
     },
     record: function record(value) {
       if (null == value) return;
