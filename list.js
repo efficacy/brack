@@ -16,10 +16,12 @@ exports.Cursor = Cursor;
 
 Cursor.prototype.forward = function forward() {
   this.link = link ? link.next : link;
+  return this.link;
 };
 
 Cursor.prototype.back = function back() {
   this.link = link ? link.prev : link;
+  return this.link;
 };
 
 Cursor.prototype.insert = function insert(value) {
@@ -30,6 +32,7 @@ Cursor.prototype.insert = function insert(value) {
     this.link.next = link;
     this.link = link;
   }
+  return this.link;
 };
 
 Cursor.prototype.unlink = function unlink() {
@@ -40,10 +43,18 @@ Cursor.prototype.unlink = function unlink() {
   if (this.link.next) {
     this.link.next.prev = this.link.prev;
   }
+  var ret = this.link;
+  this.link = this.link.prev;
+  return ret;
 };
 
 Cursor.prototype.push = function push() {
   var link = create_link(this.link, null, null, null);
   this.up = this.link;
   this.link = link;
+  return this.link;
 };
+
+Cursor.prototype.get = function get() {
+  return this.link ? this.link.value : null;
+}
