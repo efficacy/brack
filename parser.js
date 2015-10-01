@@ -5,6 +5,21 @@ var util = require('util');
 
 var Cursor = require('./list').Cursor;
 
+function Parser() {
+  this.reset();
+}
+
+Parser.prototype.reset = function reset() {
+  this.root = Cursor.root();
+  this.cursor = new Cursor(this.root);
+  this.buf = '';
+  this.status = 'outside';
+}
+
+Parser.prototype.dump = function() {
+  new Cursor(this.root.next).dump();
+};
+
 function category(c) {
   if (c === '(') return 'open';
   if (c === ')') return 'close';
@@ -14,41 +29,23 @@ function category(c) {
   return 'letter';
 }
 
-function Parser() {
-  this.root = Cursor.root();
-  this.cursor = new Cursor(this.root);
-  this.buf = '';
-  this.status = 'outside';
-}
-
-Parser.prototype.push = function() {
-  this.cursor.push();
-};
-
-Parser.prototype.push = function() {
-  this.cursor.pop();
-};
-
-Parser.prototype.unlink = function() {
-  this.cursor.unlink();
-};
-
-Parser.prototype.insert = function(value) {
-  if (null == value) return;
-  this.cursor.insert(value);
-};
-
-Parser.prototype.dump = function() {
-  new Cursor(this.root.next).dump();
-};
-
 Parser.prototype.chunk = function chunk(s) {
   var self = this;
   function token(type) {
     var value = '' + self.buf;
     self.buf = '';
     self.status = 'outside';
-    self.token({type: type, value: value});
+    switch(type) {
+    case 'open':
+      self.cursor.push();
+      break;
+    case 'symbol':
+      self.cursor.insert(evaluate(value));
+      break;
+    case 'close':
+      self.cursor.pop();
+      break;
+    }
   }
 
   var n = s.length;
@@ -99,22 +96,6 @@ function evaluate(s, context) {
   return s;
 }
 
-Parser.prototype.token = function token(token) {
-  var self = this;
-  console.log('token(' + token.type + ',' + token.value + ')');
-  switch(token.type) {
-  case 'open':
-    self.cursor.push();
-    break;
-  case 'symbol':
-    self.insert(evaluate(token.value));
-    console.log('inserted symbol, tree=' + new Cursor(self.root).dump());
-    break;
-  case 'close':
-    self.pop();
-    break;
-  }
-}
 
 module.exports = function(script) {
   var parser = new Parser();
@@ -124,20 +105,47 @@ module.exports = function(script) {
 }
 
 if (module === require.main) {
-  var immediate = process.stdout.isTTY;
-
   var parser = new Parser();
-
   process.stdin.setEncoding('utf8');
-  process.stdin.on('readable', function() {
-    var chunk = process.stdin.read();
-    if (null != chunk) {
-      parser.chunk(script);
-    }
-  });
 
-  process.stdin.on('end', function() {
-    var parsed = parser.end();
-    process.stdout.write(new Cursor(parsed).dump());
-  });
+  if (process.stdin.isTTY) {
+    console.log('Brack 0.8 Interacive');
+    var readline = require('readline');
+
+    var rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+    rl.setPrompt('> ');
+    rl.prompt();
+
+    rl.on('line', function(chunk) {
+      if (null != chunk) {
+        parser.chunk(chunk);
+        var parsed = parser.end();
+        parser.reset();
+        console.log(new Cursor(parsed).dump());
+        rl.prompt();
+      }
+    });
+
+    rl.on('close', function() {
+      var parsed = parser.end();
+      parser.reset();
+      console.log(new Cursor(parsed).dump());
+      process.exit();
+    });
+  } else {
+    process.stdin.on('readable', function() {
+      var chunk = process.stdin.read();
+      if (null != chunk) {
+        parser.chunk(chunk);
+      }
+    });
+
+    process.stdin.on('end', function() {
+      var parsed = parser.end();
+      process.stdout.write(new Cursor(parsed).dump());
+    });
+  }
 }

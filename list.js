@@ -35,7 +35,6 @@ Cursor.prototype.insert = function insert(value) {
   if (!this.link) {
     this.link = new Link(this.up, null, null, value);
   } else {
-    console.log('insert, this.link.value=' + this.link.value);
     if (null == this.link.value) {
       this.link.value = value;
     } else {
@@ -59,12 +58,10 @@ Cursor.prototype.unlink = function unlink() {
   }
   var ret = this.link;
   this.link = prev;
-//  console.log('after unlink, this.link.value=' + this.link && this.link.value);
   return ret;
 };
 
 Cursor.prototype.push = function push() {
-  console.log('push');
   var link = new Link(this.link, null, null, null);
   this.up = this.link;
   if (null != this.link && null == this.link.value) {
@@ -77,7 +74,6 @@ Cursor.prototype.push = function push() {
 };
 
 Cursor.prototype.pop = function pop() {
-  console.log('pop');
   this.link = (this.up && this.up.next) || this.up;
   this.up = this.link ? this.link.up : null;
   return this.link;
