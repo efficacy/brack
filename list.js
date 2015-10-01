@@ -18,6 +18,8 @@ function Cursor(link) {
   this.link = link || null;
 }
 exports.Cursor = Cursor;
+exports.Cursor.HEAD = '$head';
+exports.Cursor.root = function root() { return new Link(null,null,null,exports.Cursor.HEAD); }
 
 Cursor.prototype.forward = function forward() {
   this.link = this.link ? this.link.next : this.link;
