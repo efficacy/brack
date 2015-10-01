@@ -123,15 +123,13 @@ Parser.prototype.resolve = function resolve(value) {
   } else if (value.is_link) {
     if (value.value.is_link) {
       var head = self.resolve(value.value.value);
-      var tail = value.value.next;
-
       if ('function' === typeof(head)) {
-        ret = head(tail, self);
+        ret = head(value.value.next, self);
       }
     }
   }
 
-//  console.log('resolve(' + describe(value) + ') returning ' + describe(ret));
+  console.log('resolve(' + describe(value) + ') returning ' + describe(ret));
   return ret;
 }
 

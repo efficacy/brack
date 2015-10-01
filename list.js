@@ -14,7 +14,6 @@ function Link(up, prev, next, value) {
 Link.prototype.is_link = true;
 
 function Cursor(link) {
-  this.up = null;
   this.link = link || null;
 }
 exports.Cursor = Cursor;
@@ -32,16 +31,17 @@ Cursor.prototype.back = function back() {
 };
 
 Cursor.prototype.insert = function insert(value) {
+  console.log('insert ' + value);
   if (!this.link) {
-    this.link = new Link(this.up, null, null, value);
+    this.link = new Link(null, null, null, value);
   } else {
     if (null == this.link.value) {
       this.link.value = value;
     } else {
-      var link = new Link(this.up, this.link, this.link.next, value);
+      var link = new Link(this.link.up, this.link, this.link.next, value);
       if (this.link.next) this.link.next.prev = link;
       this.link.next = link;
-      this.link = link;
+      this.forward();
     }
   }
   return this.link;
@@ -62,8 +62,8 @@ Cursor.prototype.unlink = function unlink() {
 };
 
 Cursor.prototype.push = function push() {
+  console.log('push');
   var link = new Link(this.link, null, null, null);
-  this.up = this.link;
   if (null != this.link && null == this.link.value) {
     this.link.value = link;
   } else {
@@ -74,8 +74,10 @@ Cursor.prototype.push = function push() {
 };
 
 Cursor.prototype.pop = function pop() {
-  this.link = (this.up && this.up.next) || this.up;
+  console.log('pop');
+  this.link = this.link.up;
   this.up = this.link ? this.link.up : null;
+  this.forward();
   return this.link;
 };
 
@@ -85,6 +87,7 @@ Cursor.prototype.get = function get() {
 
 Cursor.prototype.walk = function(entry, done) {
   while (this.link) {
+//    console.log('walk(' + (this.link.value.is_link ? 'link' : this.link.value) + ')->' + (this.link.next != null));
     entry(this.link);
     this.forward();
   }

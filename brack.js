@@ -10,7 +10,7 @@ var builtin = {
 //  primitive: function(context, list) { return require(resolve(list[0], context))({ resolve: resolve }); },
   include: function(tail, parser) { return include(tail, parser); },
   def: function(tail, parser) { return define(tail, parser); },
-//  lambda: function(tail) { return lambda(resolve(tail.value), resolve(tail.next.value)); },
+  lambda: function(tail, parser) { return lambda(tail, parser); },
 //  map: function(context, list) { return map(resolve(list[0], context), tail(list)); },
 //  reduce: function(context, list) { return reduce(resolve(list[0], context), tail(list)); },
 
@@ -23,12 +23,20 @@ var user = { parent: builtin };
 var symbols = [ builtin, user ];
 
 function define(tail, parser) {
-  user[parser.resolve(tail.value)] = parser.resolve(tail.next.value);
+  var name = parser.resolve(tail.value);
+  var value =  parser.resolve(tail.next);
+  console.log('define name=' + name + ' value=' + Parser.describe(value));
+  if (value) {
+    user[name] = value.is_link ? value.value : value;
+  }
   return null;
 }
 
-function lambda(args, body) {
+function lambda(tail, parser) {
+  var args = tail.value;
+  var body = tail.next;
   return function(tail, parser) {
+    console.log('lambda function args=' + Parser.describe(args) + ' tail=' + Parser.describe(tail) + ' body=' + Parser.describe(body));
     var frame = { parent: symbols[symbols.length-1] };
     var ac = new Cursor(args);
     var tc = new Cursor(tail);
@@ -37,6 +45,7 @@ function lambda(args, body) {
       tc.forward();
     });
     symbols.push(frame);
+    console.log('lambda frame=' + builtin.defs());
     var ret = parser.resolve(body);
     symbols.pop();
     return ret;
@@ -76,6 +85,7 @@ function echo(tail, parser) {
   var had = false;
   function record(s) {
     if (had) parser.write(' ');
+    console.log('echo writing ' + util.inspect(s));
     parser.write(s);
     had = true;
   }

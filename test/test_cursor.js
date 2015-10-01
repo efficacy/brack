@@ -7,7 +7,7 @@ var Cursor = list.Cursor;
 
 test('raw cursor', function (t) {
   var c = new Cursor();
-  t.equal(c.up, null, 'initial cursor should have no parent');
+  t.notok(c.up, 'initial cursor should have no parent');
   t.equal(c.link, null, 'initial cursor should have no link');
   t.end();
 });
@@ -15,7 +15,7 @@ test('raw cursor', function (t) {
 test('insert on empty', function (t) {
   var c = new Cursor();
   c.insert('lala');
-  t.equal(c.up, null, 'insert should not affect parent');
+  t.notok(c.up, 'insert should not affect parent');
   t.ok(c.link, 'insert should set cursor link');
   t.equal(c.link.up, null, 'inserted link should get cursor parent');
   t.equal(c.link.prev, null, 'first inserted link should have no prev');
@@ -29,7 +29,7 @@ test('insert on single', function (t) {
   var c = new Cursor();
   var head = c.insert('lala');
   var fresh = c.insert('po');
-  t.equal(c.up, null, 'insert should not affect parent');
+  t.notok(c.up, 'insert should not affect parent');
   t.equal(c.link, fresh, 'insert should set cursor link');
   t.equal(fresh.up, null, 'inserted link should get cursor parent');
   t.equal(fresh.prev, head, 'inserted link should have correct prev');
