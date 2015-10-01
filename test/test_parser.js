@@ -2,7 +2,7 @@
 "use strict";
 
 var test = require('tape');
-var brack = require ('../parser');
+var brack = require ('../brack');
 
 test('parse simple values, no brackets', function (t) {
 
