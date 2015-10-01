@@ -5,7 +5,9 @@ var util = require('util');
 
 var Cursor = require('./list').Cursor;
 
-function Parser() {
+function Parser(symbols, write) {
+  this.symbols = symbols
+  this.write = write || process.stdout.write;
   this.reset();
 }
 
@@ -94,6 +96,43 @@ Parser.prototype.chunk = function chunk(s) {
 Parser.prototype.end = function end() {
   this.chunk('\n'); // TODO can this be done more cleanly?
   return this.root.next;
+}
+
+function describe(value) {
+  if (null == value) return null;
+  return (value.is_link ? (new Cursor(value).dump()) : util.inspect(value));
+}
+Parser.describe = describe;
+
+Parser.prototype.lookup = function lookup(name) {
+  for(var dict = this.symbols[this.symbols.length-1]; dict; dict = dict.parent) {
+    if (dict[name]) return dict[name];
+  }
+  return name;
+}
+
+Parser.prototype.resolve = function resolve(value) {
+//  console.log('resolve(' + describe(value) + ')');
+  var self = this;
+  var ret = value;
+
+  if (null == value) {
+    ret = null;
+  } else if ('string' == typeof value) {
+    ret = self.lookup(value);
+  } else if (value.is_link) {
+    if (value.value.is_link) {
+      var head = self.resolve(value.value.value);
+      var tail = value.value.next;
+
+      if ('function' === typeof(head)) {
+        ret = head(tail, self);
+      }
+    }
+  }
+
+//  console.log('resolve(' + describe(value) + ') returning ' + describe(ret));
+  return ret;
 }
 
 module.exports = Parser;

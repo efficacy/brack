@@ -8,34 +8,36 @@ var Parser = require('./parser');
 
 var builtin = {
 //  primitive: function(context, list) { return require(resolve(list[0], context))({ resolve: resolve }); },
-  include: function(tail, context) { include(tail, context); },
-  def: function(tail, context) { user[resolve(tail, context)] = resolve(tail.next, context); },
-//  lambda: function(context, list) { return lambda(list[0], list[1], context); },
+  include: function(tail, parser) { return include(tail, parser); },
+  def: function(tail, parser) { return define(tail, parser); },
+//  lambda: function(tail) { return lambda(resolve(tail.value), resolve(tail.next.value)); },
 //  map: function(context, list) { return map(resolve(list[0], context), tail(list)); },
 //  reduce: function(context, list) { return reduce(resolve(list[0], context), tail(list)); },
 
-  echo: function(tail, context) { echo(tail, context); }
+  echo: function(tail, parser) { return echo(tail, parser); },
+  defs: function(tail, parser) { return console.log(util.inspect(symbols[symbols.length-1])); }  
 };
 
 var user = { parent: builtin };
 
 var symbols = [ builtin, user ];
 
-function lookup(name) {
-  for(var dict = symbols[symbols.length-1]; dict; dict = dict.parent) {
-    if (dict[name]) return dict[name];
-  }
-  return name;
+function define(tail, parser) {
+  user[parser.resolve(tail.value)] = parser.resolve(tail.next.value);
+  return null;
 }
 
-function lambda(args, body, context) {
-  return function(context, list) {
+function lambda(args, body) {
+  return function(tail, parser) {
     var frame = { parent: symbols[symbols.length-1] };
-    for (var i = 0; i < args.length; ++i) {
-      frame[args[i]] = resolve(list[i]);
-    };
+    var ac = new Cursor(args);
+    var tc = new Cursor(tail);
+    ac.walk(function(entry) {
+      frame[entry.value] = parser.resolve(tc.get());
+      tc.forward();
+    });
     symbols.push(frame);
-    var ret = resolve(body, context);
+    var ret = parser.resolve(body);
     symbols.pop();
     return ret;
   };
@@ -51,16 +53,16 @@ function map(context, fn, list) {
 }
 
 function reduce(context, fn, list) {
-  var ret = resolve(list[0], context);
+  var ret = parser.resolve(list[0], context);
   for (var i = 1; i < list.length; ++i) {
     ret = fn([ret, list[i]]);
   }
   return ret;
 }
 
-function include(tail, context) {
+function include(tail, parser) {
   console.log('include at start, context=' + context.dump());
-  var fname = resolve(tail.value, context);
+  var fname = parser.resolve(tail.value, context);
   console.log('include(' + fname + '), context=' + context.dump());
   context.cursor.unlink(); // 'overwrite' the include
   console.log('include dropped, context=' + context.dump());
@@ -69,55 +71,53 @@ function include(tail, context) {
   return context.cursor;
 }
 
-function echo(tail) {
-  console.log('echo: tail=' + new Cursor(tail).dump());
-  var ret = '';
+function echo(tail, parser) {
   var c = new Cursor(tail);
   var had = false;
   function record(s) {
-    if (had) ret += ' ';
-    ret += s;
+    if (had) parser.write(' ');
+    parser.write(s);
     had = true;
   }
   c.walk(function(link) {
     if (link.value) {
-      if (had) context.writer(' ');
       if (link.value.is_link) {
-        echo(link.value, context);
+        if (had) parser.write(' ');
+        echo(link.value, parser);
       } else {
-        ret += link.value;
+        record(parser.resolve(link.value));
       }
     }
   });
-  console.log(ret);
+  return null;
 }
 
-function resolve(value) {
-//  console.log('resolve link=' + util.inspect(link));
-//  if (link=='hello') throw new Error('who called?');
-  if (null == value) return null;
-  if ('string' == typeof value) return lookup(value);
-  if (!value.is_link) return value;
-  var head = resolve(value.value);
-  var tail = value.next;
-
-  var ret;
-  if ('function' === typeof(head)) {
-    console.log('resolve head is a function');
-    return head(tail);
-  }
-  return value;
+function pr(parser) {
+  var parsed = parser.end();
+  var c = new Cursor(parsed);
+  c.walk(function(entry) {
+    var resolved = parser.resolve(entry);
+    if (resolved) {
+      if (resolved.is_link) {
+        parser.write(new Cursor(resolved).dump());
+      } else {
+        parser.write(''+resolved);
+      }
+    }
+    parser.reset();
+  });
 }
 
 module.exports = function(script) {
-  var parser = new Parser();
+  var ret = '';
+  var parser = new Parser(symbols, function(s) { ret += s; });
   parser.chunk(script);
-  var parsed = parser.end();
-  return new Cursor(parsed).dump();
+  pr(parser);
+  return ret;
 }
 
 if (module === require.main) {
-  var parser = new Parser();
+  var parser = new Parser(symbols, function(s) { process.stdout.write(''+s); });
   process.stdin.setEncoding('utf8');
 
   if (process.stdin.isTTY) {
@@ -134,19 +134,14 @@ if (module === require.main) {
     rl.on('line', function(chunk) {
       if (null != chunk) {
         parser.chunk(chunk);
-        var parsed = parser.end();
-        console.log('parsed: ' + typeof parsed);
-        var resolved = resolve(parsed);
-        parser.reset();
-        console.log('resolved: ' + new Cursor(resolved).dump());
+        pr(parser);
+        parser.write('\n');
         rl.prompt();
       }
     });
 
     rl.on('close', function() {
-      var parsed = parser.end();
-      parser.reset();
-      console.log(new Cursor(parsed).dump());
+      pr(parser);
       process.exit();
     });
   } else {
@@ -158,8 +153,7 @@ if (module === require.main) {
     });
 
     process.stdin.on('end', function() {
-      var parsed = parser.end();
-      process.stdout.write(new Cursor(parsed).dump());
+      pr(parser);
     });
   }
 }
