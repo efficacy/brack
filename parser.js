@@ -29,6 +29,13 @@ function category(c) {
   return 'letter';
 }
 
+function evaluate(s, context) {
+  if (null == s) return null;
+  if ((s[0] >= '0' && s[0] <= '9') || s[0] === '-') return Number(s);
+  if (s[0] === '"' || s[0] === "'") s = s.substring(1, s.length-1);
+  return s;
+}
+
 Parser.prototype.chunk = function chunk(s) {
   var self = this;
   function token(type) {
@@ -89,63 +96,4 @@ Parser.prototype.end = function end() {
   return this.root.next;
 }
 
-function evaluate(s, context) {
-  if (null == s) return null;
-  if ((s[0] >= '0' && s[0] <= '9') || s[0] === '-') return Number(s);
-  if (s[0] === '"' || s[0] === "'") s = s.substring(1, s.length-1);
-  return s;
-}
-
-
-module.exports = function(script) {
-  var parser = new Parser();
-  parser.chunk(script);
-  var parsed = parser.end();
-  return new Cursor(parsed).dump();
-}
-
-if (module === require.main) {
-  var parser = new Parser();
-  process.stdin.setEncoding('utf8');
-
-  if (process.stdin.isTTY) {
-    console.log('Brack 0.8 Interacive');
-    var readline = require('readline');
-
-    var rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
-    rl.setPrompt('> ');
-    rl.prompt();
-
-    rl.on('line', function(chunk) {
-      if (null != chunk) {
-        parser.chunk(chunk);
-        var parsed = parser.end();
-        parser.reset();
-        console.log(new Cursor(parsed).dump());
-        rl.prompt();
-      }
-    });
-
-    rl.on('close', function() {
-      var parsed = parser.end();
-      parser.reset();
-      console.log(new Cursor(parsed).dump());
-      process.exit();
-    });
-  } else {
-    process.stdin.on('readable', function() {
-      var chunk = process.stdin.read();
-      if (null != chunk) {
-        parser.chunk(chunk);
-      }
-    });
-
-    process.stdin.on('end', function() {
-      var parsed = parser.end();
-      process.stdout.write(new Cursor(parsed).dump());
-    });
-  }
-}
+module.exports = Parser;
