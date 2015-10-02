@@ -33,7 +33,7 @@ function define(tail, parser) {
 }
 
 function lambda(tail, parser) {
-  var args = tail.value;
+  var args = tail.value.next;
   var body = tail.next;
   return function(tail, parser) {
     console.log('lambda function args=' + Parser.describe(args) + ' tail=' + Parser.describe(tail) + ' body=' + Parser.describe(body));
@@ -81,6 +81,7 @@ function include(tail, parser) {
 }
 
 function echo(tail, parser) {
+  console.log('echo tail=' + Parser.describe(tail));
   var c = new Cursor(tail);
   var had = false;
   function record(s) {
@@ -93,7 +94,7 @@ function echo(tail, parser) {
     if (link.value) {
       if (link.value.is_link) {
         if (had) parser.write(' ');
-        echo(link.value, parser);
+        echo(link.value.next, parser);
       } else {
         record(parser.resolve(link.value));
       }
@@ -108,7 +109,7 @@ function pr(parser) {
   console.log('about to process ' + Parser.describe(parsed));
   c.walk(function(entry) {
     console.log('pr entry=' + Parser.describe(entry));
-    var resolved = parser.resolve(entry);
+    var resolved = parser.resolve(entry.value);
     if (resolved) {
       if (resolved.is_link) {
         parser.write(new Cursor(resolved).dump());
@@ -123,6 +124,7 @@ function pr(parser) {
 module.exports = function(script) {
   var ret = '';
   var parser = new Parser(symbols, function(s) { ret += s; });
+  console.log('parsing[' + script + ']');
   parser.chunk(script);
   pr(parser);
   return ret;

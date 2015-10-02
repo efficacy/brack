@@ -18,7 +18,7 @@ function Cursor(link) {
 }
 exports.Cursor = Cursor;
 exports.Cursor.HEAD = '$head';
-exports.Cursor.root = function root() { return new Link(null,null,null,exports.Cursor.HEAD); }
+exports.Cursor.root = function root() { return new Link(null,null,null,Cursor.HEAD); }
 
 Cursor.prototype.forward = function forward() {
   this.link = this.link ? this.link.next : this.link;
@@ -31,7 +31,7 @@ Cursor.prototype.back = function back() {
 };
 
 Cursor.prototype.insert = function insert(value) {
-  console.log('insert ' + value);
+  console.log('insert(' + value + ') this.link=' + util.inspect(this.link));
   if (!this.link) {
     this.link = new Link(null, null, null, value);
   } else {
@@ -52,6 +52,8 @@ Cursor.prototype.unlink = function unlink() {
   var prev = this.link.prev;
   if (this.link.prev) {
     this.link.prev.next = this.link.next;
+  } else if (this.link.up) {
+    this.link.up.value = this.link.next;
   }
   if (this.link.next) {
     this.link.next.prev = this.link.prev;
@@ -62,15 +64,15 @@ Cursor.prototype.unlink = function unlink() {
 };
 
 Cursor.prototype.push = function push() {
-  console.log('push');
-  var link = new Link(this.link, null, null, null);
+  console.log('push this.link=' + util.inspect(this.link));
+  var link = new Link(this.link, null, null, Cursor.HEAD);
   this.insert(link);
   this.link = link;
   return this.link;
 };
 
 Cursor.prototype.pop = function pop() {
-  console.log('pop');
+  console.log('pop this.link=' + util.inspect(this.link));
   this.link = this.link.up;
   this.up = this.link ? this.link.up : null;
   this.forward();
@@ -104,7 +106,7 @@ Cursor.prototype.dump = function dump(begin, end, sep) {
   this.walk(function(link) {
     if (link.value) {
       if (link.value.is_link) {
-        record(begin + new Cursor(link.value).dump(begin, end) + end);
+        record(begin + new Cursor(link.value.next).dump(begin, end) + end);
       } else {
         if (null != link.value) {
           record(link.value);

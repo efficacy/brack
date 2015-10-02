@@ -95,25 +95,32 @@ Parser.prototype.chunk = function chunk(s) {
 
 Parser.prototype.end = function end() {
   this.chunk('\n'); // TODO can this be done more cleanly?
+  console.log('parser ended parsed=' + describe(this.root));
   return this.root.next;
 }
 
 function describe(value) {
   if (null == value) return null;
-  return (value.is_link ? (new Cursor(value).dump()) : util.inspect(value));
+  return '(' + typeof value + ')' + (value.is_link ? (new Cursor(value).dump()) : util.inspect(value));
 }
 Parser.describe = describe;
 
 Parser.prototype.lookup = function lookup(name) {
-  for(var dict = this.symbols[this.symbols.length-1]; dict; dict = dict.parent) {
-    if (dict[name]) return dict[name];
+  console.log('lookup(' + name + ') of type ' + typeof name);
+  console.log('dict: ' + util.inspect(this.symbols[this.symbols.length-1]));
+  var ret = null;
+  for(var dict = this.symbols[this.symbols.length-1]; dict && !ret; dict = dict.parent) {
+    var ret = dict[name];
   }
-  return name;
+  console.log('lookup(' + name + ') returning ' + name);
+  return ret || name;
 }
 
+var level = 0;
+function indent() { var ret = ''; for (var i = 0; i < level; ++i) ret += ' '; return ret; }
+
 Parser.prototype._resolve = function _resolve(value) {
-  if ('function' == typeof value) throw new Error('who called?');
-  console.log('_resolve(' + describe(value) + ')');
+  console.log(indent() + '_resolve(' + describe(value) + ')'); ++level;
   var self = this;
   var ret = null;
 
@@ -121,20 +128,40 @@ Parser.prototype._resolve = function _resolve(value) {
     ret = null;
   } else if ('string' == typeof value) {
     ret = self.lookup(value);
+    console.log(indent() + 'lookup(' + value + ') => ' + describe(ret));
   } else if (value.is_link) {
-    var head = self.resolve(value.value);
-    if (null != head) {
-      var tail = value.next;
-      console.log('_resolve(' + describe(value) + ') head=' + describe(head) + ' tail=' + describe(tail));
-      if ('function' === typeof(head)) {
-        ret = head(tail, self);
-      } else {
-        ret = value;
+    if (value.value === Cursor.HEAD) {
+      var list = value.next;
+      var head = self.resolve(list.value);
+      if (null != head) {
+        var tail = list.next;
+        console.log(indent() + '_resolve(' + describe(value) + ') head=' + describe(head) + ' tail=' + describe(tail));
+        if ('function' === typeof(head)) {
+          ret = head(tail, self);
+        } else {
+          ret = list;
+        }
       }
+    } else {
+      ret = self.resolve(value.value);
     }
+//    var contents = value.value.next;
+//    var head = self.resolve(contents);
+//    if (null != head) {
+//      var tail = contents.next;
+//      console.log(indent() + '_resolve(' + describe(value) + ') head=' + describe(head) + ' tail=' + describe(tail));
+//      if ('function' === typeof(head)) {
+//        ret = head(tail, self);
+//      } else {
+//        ret = value;
+//      }
+//    }
+  } else {
+    ret = value;
   }
 
-  console.log('_resolve(' + describe(value) + ') returning ' + describe(ret));
+  --level;
+  console.log(indent() + '_resolve(' + describe(value) + ') returning ' + describe(ret));
   return ret;
 }
 
@@ -145,7 +172,7 @@ Parser.prototype.resolve = function resolve(value) {
     prev = resolved;
     resolved = this._resolve(prev);
   }
-  console.log('resolve(' + describe(value) + ') returning ' + describe(resolved));
+  console.log(indent() + 'resolve(' + describe(value) + ') returning ' + describe(resolved));
   return resolved;
 }
 
