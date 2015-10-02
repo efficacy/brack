@@ -70,14 +70,24 @@ function reduce(context, fn, list) {
 }
 
 function include(tail, parser) {
-  console.log('include at start, context=' + context.dump());
-  var fname = parser.resolve(tail.value, context);
-  console.log('include(' + fname + '), context=' + context.dump());
-  context.cursor.unlink(); // 'overwrite' the include
-  console.log('include dropped, context=' + context.dump());
-  lex_chunk(fs.readFileSync(fname, {encoding: 'utf8'}), context);
-  console.log('include lexed file, context=' + context.dump());
-  return context.cursor;
+  console.log('include at start, tail=' + Parser.describe(tail) + ', tree=' + parser.dump());
+  var fname = parser.resolve(tail);
+  console.log('include(' + fname + ')');
+  var p = new Parser(parser.symbols, parser.write);
+  p.chunk(fs.readFileSync(fname, {encoding: 'utf8'}));
+  var parsed = p.end();
+//  parser.cursor.unlink(); // 'overwrite' the include
+  var c = new Cursor(parsed);
+  console.log('about to include ' + Parser.describe(parsed));
+//  c.walk(function(entry) {
+//    console.log('include entry=' + Parser.describe(entry));
+//    var resolved = parser.resolve(entry.value);
+//    if (resolved) {
+//      parser.cursor.insert(resolved);
+//    }
+//  });
+  console.log('include at end, tree=' + parser.dump());
+  return parsed;
 }
 
 function echo(tail, parser) {
@@ -117,8 +127,8 @@ function pr(parser) {
         parser.write(''+resolved);
       }
     }
-    parser.reset();
   });
+  parser.reset();
 }
 
 module.exports = function(script) {

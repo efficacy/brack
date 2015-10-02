@@ -19,7 +19,7 @@ Parser.prototype.reset = function reset() {
 }
 
 Parser.prototype.dump = function() {
-  new Cursor(this.root.next).dump();
+  return Parser.describe(this.root.next);
 };
 
 function category(c) {
@@ -106,13 +106,10 @@ function describe(value) {
 Parser.describe = describe;
 
 Parser.prototype.lookup = function lookup(name) {
-  console.log('lookup(' + name + ') of type ' + typeof name);
-  console.log('dict: ' + util.inspect(this.symbols[this.symbols.length-1]));
   var ret = null;
   for(var dict = this.symbols[this.symbols.length-1]; dict && !ret; dict = dict.parent) {
     var ret = dict[name];
   }
-  console.log('lookup(' + name + ') returning ' + name);
   return ret || name;
 }
 
