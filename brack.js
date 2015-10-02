@@ -7,7 +7,7 @@ var Cursor = require('./list').Cursor;
 var Parser = require('./parser');
 
 var builtin = {
-//  primitive: function(context, list) { return require(resolve(list[0], context))({ resolve: resolve }); },
+  primitive: function(tail, parser) { return primitive(tail, parser); },
   include: function(tail, parser) { return include(tail, parser); },
   def: function(tail, parser) { return define(tail, parser); },
   lambda: function(tail, parser) { return lambda(tail, parser); },
@@ -21,6 +21,11 @@ var builtin = {
 var user = { parent: builtin };
 
 var symbols = [ builtin, user ];
+
+function primitive(tail, parser) {
+  var name = parser.resolve(tail.value);
+  return require(name)();
+};
 
 function define(tail, parser) {
   var name = parser.resolve(tail.value);
