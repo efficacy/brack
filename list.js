@@ -14,7 +14,7 @@ function Link(up, prev, next, value) {
 Link.prototype.is_link = true;
 
 function Cursor(link) {
-  this.link = link || null;
+  this.link = link;
 }
 exports.Cursor = Cursor;
 exports.Cursor.HEAD = '$head';
@@ -64,11 +64,7 @@ Cursor.prototype.unlink = function unlink() {
 Cursor.prototype.push = function push() {
   console.log('push');
   var link = new Link(this.link, null, null, null);
-  if (null != this.link && null == this.link.value) {
-    this.link.value = link;
-  } else {
-    this.insert(link);
-  }
+  this.insert(link);
   this.link = link;
   return this.link;
 };

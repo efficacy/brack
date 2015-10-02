@@ -111,26 +111,42 @@ Parser.prototype.lookup = function lookup(name) {
   return name;
 }
 
-Parser.prototype.resolve = function resolve(value) {
-//  console.log('resolve(' + describe(value) + ')');
+Parser.prototype._resolve = function _resolve(value) {
+  if ('function' == typeof value) throw new Error('who called?');
+  console.log('_resolve(' + describe(value) + ')');
   var self = this;
-  var ret = value;
+  var ret = null;
 
   if (null == value) {
     ret = null;
   } else if ('string' == typeof value) {
     ret = self.lookup(value);
   } else if (value.is_link) {
-    if (value.value.is_link) {
-      var head = self.resolve(value.value.value);
+    var head = self.resolve(value.value);
+    if (null != head) {
+      var tail = value.next;
+      console.log('_resolve(' + describe(value) + ') head=' + describe(head) + ' tail=' + describe(tail));
       if ('function' === typeof(head)) {
-        ret = head(value.value.next, self);
+        ret = head(tail, self);
+      } else {
+        ret = value;
       }
     }
   }
 
-  console.log('resolve(' + describe(value) + ') returning ' + describe(ret));
+  console.log('_resolve(' + describe(value) + ') returning ' + describe(ret));
   return ret;
+}
+
+Parser.prototype.resolve = function resolve(value) {
+  var prev = null;
+  var resolved = value;
+  while (resolved != null && (resolved.is_link || 'string' === typeof resolved) && resolved !== prev) {
+    prev = resolved;
+    resolved = this._resolve(prev);
+  }
+  console.log('resolve(' + describe(value) + ') returning ' + describe(resolved));
+  return resolved;
 }
 
 module.exports = Parser;

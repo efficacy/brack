@@ -45,7 +45,7 @@ function lambda(tail, parser) {
       tc.forward();
     });
     symbols.push(frame);
-    console.log('lambda frame=' + builtin.defs());
+    console.log('lambda frame=' + util.inspect(symbols[symbols.length-1]));
     var ret = parser.resolve(body);
     symbols.pop();
     return ret;
@@ -105,7 +105,9 @@ function echo(tail, parser) {
 function pr(parser) {
   var parsed = parser.end();
   var c = new Cursor(parsed);
+  console.log('about to process ' + Parser.describe(parsed));
   c.walk(function(entry) {
+    console.log('pr entry=' + Parser.describe(entry));
     var resolved = parser.resolve(entry);
     if (resolved) {
       if (resolved.is_link) {

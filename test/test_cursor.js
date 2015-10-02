@@ -8,7 +8,7 @@ var Cursor = list.Cursor;
 test('raw cursor', function (t) {
   var c = new Cursor();
   t.notok(c.up, 'initial cursor should have no parent');
-  t.equal(c.link, null, 'initial cursor should have no link');
+  t.notok(c.link, 'initial cursor should have no link');
   t.end();
 });
 
