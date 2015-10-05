@@ -125,34 +125,25 @@ Parser.prototype._resolve = function _resolve(value) {
     ret = null;
   } else if ('string' == typeof value) {
     ret = self.lookup(value);
-    console.log(indent() + 'lookup(' + value + ') => ' + describe(ret));
   } else if (value.is_link) {
     if (value.value === Cursor.HEAD) {
       var list = value.next;
       var head = self.resolve(list.value);
       if (null != head) {
-        var tail = list.next;
-        console.log(indent() + '_resolve(' + describe(value) + ') head=' + describe(head) + ' tail=' + describe(tail));
         if ('function' === typeof(head)) {
+          var tail = list.next;
           ret = head(tail, self);
         } else {
-          ret = list;
+          var c = new Cursor(value);
+          c.walk(function(link) {
+            var ret = self.resolve(link.value); 
+            if (ret) c.insert(ret); 
+          });
         }
       }
     } else {
       ret = self.resolve(value.value);
     }
-//    var contents = value.value.next;
-//    var head = self.resolve(contents);
-//    if (null != head) {
-//      var tail = contents.next;
-//      console.log(indent() + '_resolve(' + describe(value) + ') head=' + describe(head) + ' tail=' + describe(tail));
-//      if ('function' === typeof(head)) {
-//        ret = head(tail, self);
-//      } else {
-//        ret = value;
-//      }
-//    }
   } else {
     ret = value;
   }

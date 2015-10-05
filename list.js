@@ -31,7 +31,6 @@ Cursor.prototype.back = function back() {
 };
 
 Cursor.prototype.insert = function insert(value) {
-  console.log('insert(' + value + ') this.link=' + util.inspect(this.link));
   if (!this.link) {
     this.link = new Link(null, null, null, value);
   } else {
@@ -64,7 +63,6 @@ Cursor.prototype.unlink = function unlink() {
 };
 
 Cursor.prototype.push = function push() {
-  console.log('push this.link=' + util.inspect(this.link));
   var link = new Link(this.link, null, null, Cursor.HEAD);
   this.insert(link);
   this.link = link;
@@ -72,7 +70,6 @@ Cursor.prototype.push = function push() {
 };
 
 Cursor.prototype.pop = function pop() {
-  console.log('pop this.link=' + util.inspect(this.link));
   this.link = this.link.up;
   this.up = this.link ? this.link.up : null;
   this.forward();
@@ -85,8 +82,7 @@ Cursor.prototype.get = function get() {
 
 Cursor.prototype.walk = function(entry, done) {
   while (this.link) {
-//    console.log('walk(' + (this.link.value.is_link ? 'link' : this.link.value) + ')->' + (this.link.next != null));
-    entry(this.link);
+    if (this.link.value !== Cursor.HEAD) entry(this.link);
     this.forward();
   }
   if (done) done();

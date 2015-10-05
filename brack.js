@@ -81,23 +81,14 @@ function include(tail, parser) {
   var p = new Parser(parser.symbols, parser.write);
   p.chunk(fs.readFileSync(fname, {encoding: 'utf8'}));
   var parsed = p.end();
-//  parser.cursor.unlink(); // 'overwrite' the include
   var c = new Cursor(parsed);
   console.log('about to include ' + Parser.describe(parsed));
-//  c.walk(function(entry) {
-//    console.log('include entry=' + Parser.describe(entry));
-//    var resolved = parser.resolve(entry.value);
-//    if (resolved) {
-//      parser.cursor.insert(resolved);
-//    }
-//  });
   console.log('include at end, tree=' + parser.dump());
   return parsed;
 }
 
 function echo(tail, parser) {
   console.log('echo tail=' + Parser.describe(tail));
-  var c = new Cursor(tail);
   var had = false;
   function record(s) {
     if (had) parser.write(' ');
@@ -105,16 +96,20 @@ function echo(tail, parser) {
     parser.write(s);
     had = true;
   }
-  c.walk(function(link) {
-    if (link.value) {
-      if (link.value.is_link) {
+  if (tail) {
+    if (!tail.is_link) {
+      record(parser.resolve(tail));
+    } else {
+      console.log('echo tail is a link');
+      var c = new Cursor(tail);
+      c.walk(function(link) {
+        console.log('echo walking, got ' + Parser.describe(link));
         if (had) parser.write(' ');
-        echo(link.value.next, parser);
-      } else {
-        record(parser.resolve(link.value));
-      }
+        echo(parser.resolve(link.value), parser);
+        had = true;
+      });
     }
-  });
+  }
   return null;
 }
 
