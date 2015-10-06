@@ -3,7 +3,8 @@
 
 var fs = require('fs');
 var util = require('util');
-var Cursor = require('./list').Cursor;
+
+var Cursor = require('./cursor');
 var Parser = require('./parser');
 
 var builtin = {

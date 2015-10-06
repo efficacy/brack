@@ -4,7 +4,7 @@
 var util = require('util');
 var helper = require('./test/helper');
 
-var Cursor = require('./list').Cursor;
+var Cursor = require('./cursor');
 
 function Parser(symbols, write) {
   this.symbols = symbols

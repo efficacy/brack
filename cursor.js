@@ -17,9 +17,9 @@ function Cursor(link) {
   this.head = link || Cursor.root();
   this.link = this.head;
 }
-exports.Cursor = Cursor;
-exports.Cursor.HEAD = '$head';
-exports.Cursor.root = function root() { return new Link(null,null,null,Cursor.HEAD); }
+module.exports = Cursor;
+Cursor.HEAD = '$head';
+Cursor.root = function root() { return new Link(null,null,null,Cursor.HEAD); }
 
 Cursor.prototype.forward = function forward() {
   this.link = this.link ? this.link.next : this.link;

@@ -3,8 +3,8 @@
 
 var test = require('tape');
 var util = require('util');
-var list = require ('../list');
-var Cursor = list.Cursor;
+
+var Cursor = require ('../cursor');
 
 var helper = require('./helper');
 
