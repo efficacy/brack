@@ -14,7 +14,8 @@ function Link(up, prev, next, value) {
 Link.prototype.is_link = true;
 
 function Cursor(link) {
-  this.link = link;
+  this.head = link || Cursor.root();
+  this.link = this.head;
 }
 exports.Cursor = Cursor;
 exports.Cursor.HEAD = '$head';
@@ -27,6 +28,11 @@ Cursor.prototype.forward = function forward() {
 
 Cursor.prototype.back = function back() {
   this.link = this.link ? this.link.prev : this.link;
+  return this.link;
+};
+
+Cursor.prototype.reset = function reset() {
+  this.link = this.head;
   return this.link;
 };
 
@@ -61,6 +67,11 @@ Cursor.prototype.unlink = function unlink() {
   this.link = prev;
   return ret;
 };
+
+Cursor.prototype.replace = function replace(value) {
+  this.unlink();
+  this.insert(value);
+}
 
 Cursor.prototype.push = function push() {
   var link = new Link(this.link, null, null, Cursor.HEAD);
