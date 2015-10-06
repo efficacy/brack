@@ -1,6 +1,7 @@
 /*jslint node: true */
 "use strict";
 
+require('./test_helper');
 require('./test_cursor');
 require('./test_parser');
 require('./test_primitive');

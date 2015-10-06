@@ -2,6 +2,7 @@
 "use strict";
 
 var util = require('util');
+var helper = require('./test/helper');
 
 var Cursor = require('./list').Cursor;
 
@@ -135,10 +136,15 @@ Parser.prototype._resolve = function _resolve(value) {
           ret = head(tail, self);
         } else {
           var c = new Cursor(value);
+          console.log(indent() + '_resolve before walk '  + util.inspect(helper.spool(c.head)));
           c.walk(function(link) {
             var ret = self.resolve(link.value); 
-            if (ret) c.insert(ret); 
+            if (ret && ret !== link.value) {
+              c.replace(ret);
+              console.log(indent() + '_resolve after replace '  + util.inspect(helper.spool(c.head)));
+            }
           });
+          return value;
         }
       }
     } else {

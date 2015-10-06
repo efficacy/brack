@@ -10,7 +10,7 @@ function spool(link) {
   var ret = [];
   while(link) {
     if (link.value && link.value.is_link) {
-      ret.push(spool(link));
+      ret.push(spool(link.value));
     } else if (link.value !== Cursor.HEAD) {
       ret.push(link.value);
     }
