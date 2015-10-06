@@ -8,13 +8,10 @@ var Cursor = require('./cursor');
 var Parser = require('./parser');
 
 var builtin = {
-  primitive: function(tail, parser) { return primitive(tail, parser); },
+  primitive: function(tail, parser) { return require(parser.resolve(tail.value)); },
   include: function(tail, parser) { return include(tail, parser); },
   def: function(tail, parser) { return define(tail, parser); },
   lambda: function(tail, parser) { return lambda(tail, parser); },
-//  map: function(context, list) { return map(resolve(list[0], context), tail(list)); },
-//  reduce: function(context, list) { return reduce(resolve(list[0], context), tail(list)); },
-
   echo: function(tail, parser) { return echo(tail, parser); },
   defs: function(tail, parser) { return console.log(util.inspect(symbols[symbols.length-1])); }  
 };
@@ -23,10 +20,14 @@ var user = { parent: builtin };
 
 var symbols = [ builtin, user ];
 
-function primitive(tail, parser) {
-  var name = parser.resolve(tail.value);
-  return require(name)();
-};
+function include(tail, parser) {
+  var fname = parser.resolve(tail);
+  var p = new Parser(parser.symbols, parser.write);
+  p.chunk(fs.readFileSync(fname, {encoding: 'utf8'}));
+  var parsed = p.end();
+  var c = new Cursor(parsed);
+  return parsed;
+}
 
 function define(tail, parser) {
   var name = parser.resolve(tail.value);
@@ -53,32 +54,6 @@ function lambda(tail, parser) {
     symbols.pop();
     return ret;
   };
-}
-
-function map(context, fn, list) {
-  var ret = [];
-  for (var i = 0; i < list.length; ++i) {
-    var result = fn(context, list[i]);
-    if (null != result) ret.push(result);
-  }
-  return ret;
-}
-
-function reduce(context, fn, list) {
-  var ret = parser.resolve(list[0], context);
-  for (var i = 1; i < list.length; ++i) {
-    ret = fn([ret, list[i]]);
-  }
-  return ret;
-}
-
-function include(tail, parser) {
-  var fname = parser.resolve(tail);
-  var p = new Parser(parser.symbols, parser.write);
-  p.chunk(fs.readFileSync(fname, {encoding: 'utf8'}));
-  var parsed = p.end();
-  var c = new Cursor(parsed);
-  return parsed;
 }
 
 function echo(tail, parser) {

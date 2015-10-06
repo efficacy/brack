@@ -2,7 +2,6 @@
 "use strict";
 
 var util = require('util');
-var helper = require('./test/helper');
 
 var Cursor = require('./cursor');
 
