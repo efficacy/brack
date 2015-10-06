@@ -10,6 +10,6 @@ test('call primitive through define', function (t) {
 });
 
 test('call primitive direct', function (t) {
-  t.equal(brack('((primitive "./library/plus") hello there))'), 'hellothere', 'direct primitive call should resolve');
+  t.equal(brack('((primitive "./library/plus") alpha beta))'), 'alphabeta', 'direct primitive call should resolve');
   t.end();
 });

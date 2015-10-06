@@ -15,6 +15,11 @@ test('include and assign', function (t) {
 });
 
 test('include function', function (t) {
-  t.equal(brack('(include "test/input/define.brack") (aa "whatever")'), "whatever", 'included function should be callable');
+  t.equal(brack('(include "test/input/define.bra") (aa "whatever")'), "whatever", 'included function should be callable');
+  t.end();
+});
+
+test('include nested', function (t) {
+  t.equal(brack('(include "library/math.bra") (+ 12 34)'), "46", 'included file should be executed in current context');
   t.end();
 });

@@ -96,7 +96,7 @@ Parser.prototype.chunk = function chunk(s) {
 
 Parser.prototype.end = function end() {
   this.chunk('\n'); // TODO can this be done more cleanly?
-  console.log('parser ended parsed=' + describe(this.root));
+//  console.log('parser ended parsed=' + util.inspect(helper.spool(this.root)));
   return this.root.next;
 }
 
@@ -114,11 +114,7 @@ Parser.prototype.lookup = function lookup(name) {
   return ret || name;
 }
 
-var level = 0;
-function indent() { var ret = ''; for (var i = 0; i < level; ++i) ret += ' '; return ret; }
-
 Parser.prototype._resolve = function _resolve(value) {
-  console.log(indent() + '_resolve(' + describe(value) + ')'); ++level;
   var self = this;
   var ret = null;
 
@@ -136,12 +132,10 @@ Parser.prototype._resolve = function _resolve(value) {
           ret = head(tail, self);
         } else {
           var c = new Cursor(value);
-          console.log(indent() + '_resolve before walk '  + util.inspect(helper.spool(c.head)));
           c.walk(function(link) {
             var ret = self.resolve(link.value); 
             if (ret && ret !== link.value) {
               c.replace(ret);
-              console.log(indent() + '_resolve after replace '  + util.inspect(helper.spool(c.head)));
             }
           });
           return value;
@@ -154,8 +148,6 @@ Parser.prototype._resolve = function _resolve(value) {
     ret = value;
   }
 
-  --level;
-  console.log(indent() + '_resolve(' + describe(value) + ') returning ' + describe(ret));
   return ret;
 }
 
@@ -166,7 +158,6 @@ Parser.prototype.resolve = function resolve(value) {
     prev = resolved;
     resolved = this._resolve(prev);
   }
-  console.log(indent() + 'resolve(' + describe(value) + ') returning ' + describe(resolved));
   return resolved;
 }
 

@@ -1,3 +1,0 @@
-(def plus (include "./plus.brack"))
-(def minus (include "./minus.brack"))
- 

@@ -30,7 +30,6 @@ function primitive(tail, parser) {
 function define(tail, parser) {
   var name = parser.resolve(tail.value);
   var value =  parser.resolve(tail.next);
-  console.log('define name=' + name + ' value=' + Parser.describe(value));
   if (value) {
     user[name] = value.is_link ? value.value : value;
   }
@@ -41,7 +40,6 @@ function lambda(tail, parser) {
   var args = tail.value.next;
   var body = tail.next;
   return function(tail, parser) {
-    console.log('lambda function args=' + Parser.describe(args) + ' tail=' + Parser.describe(tail) + ' body=' + Parser.describe(body));
     var frame = { parent: symbols[symbols.length-1] };
     var ac = new Cursor(args);
     var tc = new Cursor(tail);
@@ -50,7 +48,6 @@ function lambda(tail, parser) {
       tc.forward();
     });
     symbols.push(frame);
-    console.log('lambda frame=' + util.inspect(symbols[symbols.length-1]));
     var ret = parser.resolve(body);
     symbols.pop();
     return ret;
@@ -75,24 +72,18 @@ function reduce(context, fn, list) {
 }
 
 function include(tail, parser) {
-  console.log('include at start, tail=' + Parser.describe(tail) + ', tree=' + parser.dump());
   var fname = parser.resolve(tail);
-  console.log('include(' + fname + ')');
   var p = new Parser(parser.symbols, parser.write);
   p.chunk(fs.readFileSync(fname, {encoding: 'utf8'}));
   var parsed = p.end();
   var c = new Cursor(parsed);
-  console.log('about to include ' + Parser.describe(parsed));
-  console.log('include at end, tree=' + parser.dump());
   return parsed;
 }
 
 function echo(tail, parser) {
-  console.log('echo tail=' + Parser.describe(tail));
   var had = false;
   function record(s) {
     if (had) parser.write(' ');
-    console.log('echo writing ' + util.inspect(s));
     parser.write(s);
     had = true;
   }
@@ -100,10 +91,8 @@ function echo(tail, parser) {
     if (!tail.is_link) {
       record(parser.resolve(tail));
     } else {
-      console.log('echo tail is a link');
       var c = new Cursor(tail);
       c.walk(function(link) {
-        console.log('echo walking, got ' + Parser.describe(link));
         if (had) parser.write(' ');
         echo(parser.resolve(link.value), parser);
         had = true;
@@ -116,9 +105,7 @@ function echo(tail, parser) {
 function pr(parser) {
   var parsed = parser.end();
   var c = new Cursor(parsed);
-  console.log('about to process ' + Parser.describe(parsed));
   c.walk(function(entry) {
-    console.log('pr entry=' + Parser.describe(entry));
     var resolved = parser.resolve(entry.value);
     if (resolved) {
       if (resolved.is_link) {
@@ -134,7 +121,6 @@ function pr(parser) {
 module.exports = function(script) {
   var ret = '';
   var parser = new Parser(symbols, function(s) { ret += s; });
-  console.log('parsing[' + script + ']');
   parser.chunk(script);
   pr(parser);
   return ret;

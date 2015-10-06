@@ -1,0 +1,3 @@
+(def + (primitive "./library/plus"))
+(def - (primitive "./library/minus"))
+ 
