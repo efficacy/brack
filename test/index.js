@@ -8,3 +8,4 @@ require('./test_primitive');
 require('./test_echo');
 require('./test_lambda');
 require('./test_include');
+require('./test_map');
