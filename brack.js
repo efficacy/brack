@@ -8,28 +8,22 @@ var Cursor = require('./cursor');
 var Parser = require('./parser');
 
 var builtin = {
-  primitive: function(tail, parser) { return require(parser.resolve(tail.value)); },
-  include: include,
-  def: define,
+  primitive: primitive,
+  def: def,
   lambda: lambda,
-  echo: echo,
-  defs: function(tail, parser) { return console.log(util.inspect(symbols[symbols.length-1])); }  
+  include: include,
+  echo: echo
 };
 
 var user = { parent: builtin };
 
 var symbols = [ builtin, user ];
 
-function include(tail, parser) {
-  var fname = parser.resolve(tail);
-  var p = new Parser(parser.symbols, parser.write);
-  p.chunk(fs.readFileSync(fname, {encoding: 'utf8'}));
-  var parsed = p.end();
-  var c = new Cursor(parsed);
-  return parsed;
+function primitive (tail, parser) {
+  return require(parser.resolve(tail.value));
 }
 
-function define(tail, parser) {
+function def(tail, parser) {
   var name = parser.resolve(tail.value);
   var value =  parser.resolve(tail.next);
   if (value) {
@@ -54,6 +48,15 @@ function lambda(tail, parser) {
     symbols.pop();
     return ret;
   };
+}
+
+function include(tail, parser) {
+  var fname = parser.resolve(tail);
+  var p = new Parser(parser.symbols, parser.write);
+  p.chunk(fs.readFileSync(fname, {encoding: 'utf8'}));
+  var parsed = p.end();
+  var c = new Cursor(parsed);
+  return parsed;
 }
 
 function echo(tail, parser) {
