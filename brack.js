@@ -9,10 +9,10 @@ var Parser = require('./parser');
 
 var builtin = {
   primitive: function(tail, parser) { return require(parser.resolve(tail.value)); },
-  include: function(tail, parser) { return include(tail, parser); },
-  def: function(tail, parser) { return define(tail, parser); },
-  lambda: function(tail, parser) { return lambda(tail, parser); },
-  echo: function(tail, parser) { return echo(tail, parser); },
+  include: include,
+  def: define,
+  lambda: lambda,
+  echo: echo,
   defs: function(tail, parser) { return console.log(util.inspect(symbols[symbols.length-1])); }  
 };
 

@@ -2,7 +2,6 @@
 "use strict";
 
 var util = require('util');
-
 var Cursor = require('./cursor');
 
 function Parser(symbols, write) {
@@ -95,7 +94,6 @@ Parser.prototype.chunk = function chunk(s) {
 
 Parser.prototype.end = function end() {
   this.chunk('\n'); // TODO can this be done more cleanly?
-//  console.log('parser ended parsed=' + util.inspect(helper.spool(this.root)));
   return this.root.next;
 }
 
