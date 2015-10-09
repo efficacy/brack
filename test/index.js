@@ -9,3 +9,4 @@ require('./test_echo');
 require('./test_lambda');
 require('./test_include');
 require('./test_map');
+require('./test_reduce');
