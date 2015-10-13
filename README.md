@@ -1,4 +1,4 @@
-# brack
+# Brack
 
 A minimal lisp-like language in node.js
 
@@ -6,7 +6,7 @@ Reads from standard input, writes to standard output
 
 ## Installation
 
-At the moment it's just one js file. install it however you like
+At the moment it's just some js files. install it wherever you like
 
 ## Usage
 To use as a repl, just 
@@ -17,7 +17,7 @@ exit using Ctrl-D
 
 To use with a script
 ```
-  node brack.js < awesome.brack
+  node brack.js < awesome.bra
 ```
 
 ### Usage Example
@@ -50,7 +50,7 @@ requires functions. Luckily, some are supplied. More may come later ;)
   ```
 
   ```
-  (def "long name" (tinky-winky dipsy lala po)) ("long name") =>
+  (def "long name" (tinky-winky dipsy lala po)) "long name" =>
   tinky-winky dipsy lala po
   ```
 
@@ -65,10 +65,10 @@ requires functions. Luckily, some are supplied. More may come later ;)
 * **include**:
   execute the text of an external file
 
-  For example, if we have a file 'tmp.brack' containing '(def a 13)'
+  For example, if we have a file 'tmp.bra' containing '(def a 13)'
 
   ```
-  (include "./tmp.brack") a =>
+  (include "./tmp.bra") a =>
   13
   ```
 
@@ -104,12 +104,12 @@ requires functions. Luckily, some are supplied. More may come later ;)
   apply a named function to pairs of the remaining parameters and accumulate the result
 
   ```
-  (reduce plus 1 2 3) =>
+  (reduce + 1 2 3) =>
   6
   ```
 
   ```
-  (reduce plus a b c) =>
+  (reduce + a b c) =>
   abc
   ```
 
@@ -136,19 +136,19 @@ requires functions. Luckily, some are supplied. More may come later ;)
 ## Math Library
 
   ```
-  (include "./library/math.brack")
+  (include "./library/math.bra")
   ```
 
 * **plus**:
   "add" its first two parameters (numerically or textually, depending on the supplied values)
 
   ```
-  (plus 1 2) =>
+  (+ 1 2) =>
   3
   ```
 
   ```
-  (plus a b) =>
+  (+ a b) =>
   ab
   ```
 
@@ -156,12 +156,12 @@ requires functions. Luckily, some are supplied. More may come later ;)
   "subtract" its first two parameters (numerically or textually, depending on the supplied values)
 
   ```
-  (minus 5 4) =>
+  (- 5 4) =>
   1
   ```
 
   ```
-  (minus 2 12) =>
+  (- 2 12) =>
   -10
   ```
   
